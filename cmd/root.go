@@ -18,12 +18,14 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/dashotv/grimoire/config"
 	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
 var cfgFile string
+var cfg = &config.Config{}
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -81,4 +83,11 @@ func initConfig() {
 	if err := viper.ReadInConfig(); err == nil {
 		fmt.Println("Using config file:", viper.ConfigFileUsed())
 	}
+
+	err := viper.Unmarshal(cfg)
+	if err != nil {
+		fmt.Errorf("failed to parse config: %s", err)
+	}
+
+	cfg.Compile()
 }

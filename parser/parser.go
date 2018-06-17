@@ -1,56 +1,25 @@
 package parser
 
 import (
-	"crypto/md5"
-	"encoding/hex"
 	"fmt"
-	"strings"
-	"time"
-
 	"github.com/mmcdole/gofeed"
+	"strconv"
+	"strings"
 
 	"github.com/dashotv/grimoire/config"
+	"github.com/dashotv/server/models"
 )
 
 type Parser struct {
 	cfg *config.Config
 }
 
-type Release struct {
-	Raw         string
-	Title       string
-	Description string
-	View        string
-	Download    string
-	Season      string
-	Episode     string
-	Size        string // bytes?
-	GUID        string // infohash?
-	Resolution  string
-	Encoding    string
-	Team        string
-	Group       string
-	Verified    bool
-	Bluray      bool
-	Uncensored  bool
-	Checksum    string
-	Source      string
-	Type        string
-	Published   *time.Time
-}
-
-func (r *Release) CalculateChecksum() {
-	h := md5.New()
-	h.Write([]byte(r.Download))
-	r.Checksum = hex.EncodeToString(h.Sum(nil))
-}
-
 func NewParser(cfg *config.Config) *Parser {
 	return &Parser{cfg: cfg}
 }
 
-func (p *Parser) Parse() []*Release {
-	list := []*Release{}
+func (p *Parser) Parse() []*models.Release {
+	list := []*models.Release{}
 	fp := gofeed.NewParser()
 	for _, f := range p.cfg.Feeds {
 		feed, err := fp.ParseURL(f.URL)
@@ -72,7 +41,7 @@ func (p *Parser) Parse() []*Release {
 	return list
 }
 
-func (p *Parser) ParseItem(t, source string, item *gofeed.Item) (*Release, error) {
+func (p *Parser) ParseItem(t, source string, item *gofeed.Item) (*models.Release, error) {
 	for _, r := range p.cfg.Patterns {
 		if r.Type != t {
 			continue
@@ -84,16 +53,16 @@ func (p *Parser) ParseItem(t, source string, item *gofeed.Item) (*Release, error
 		}
 
 		fmt.Printf("matches: %#v\n", matches)
-		r := &Release{}
+		r := &models.Release{}
 		r.Raw = item.Title
-		r.GUID = item.GUID
+		r.Guid = item.GUID
 		r.Team = matches[0][2]
 		r.Title = strings.Replace(matches[0][3], ".", " ", -1)
-		r.Season = matches[0][5]
-		r.Episode = matches[0][7]
-		r.Resolution = matches[0][9]
-		r.Group = matches[0][10]
-		r.Published = item.PublishedParsed
+		r.Season, _ = strconv.Atoi(matches[0][5])
+		r.Episode, _ = strconv.Atoi(matches[0][7])
+		r.Resolution, _ = strconv.Atoi(matches[0][9])
+		r.Team = matches[0][10]
+		r.Published = *item.PublishedParsed
 		r.Download = item.Link
 		r.Source = source
 		r.Type = t
@@ -102,7 +71,7 @@ func (p *Parser) ParseItem(t, source string, item *gofeed.Item) (*Release, error
 		for _, e := range item.Extensions["newznab"]["attr"] {
 			switch e.Attrs["name"] {
 			case "size":
-				r.Size = e.Attrs["value"]
+				r.Size, _ = strconv.Atoi(e.Attrs["value"])
 			//case "season":
 			//	r.Season = e.Attrs["value"]
 			//case "episode":
@@ -110,7 +79,7 @@ func (p *Parser) ParseItem(t, source string, item *gofeed.Item) (*Release, error
 			case "showtitle":
 				r.Title = e.Attrs["value"]
 			case "group":
-				r.Group = e.Attrs["value"]
+				r.Team = e.Attrs["value"]
 			}
 		}
 		return r, nil

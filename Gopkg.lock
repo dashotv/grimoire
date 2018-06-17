@@ -22,7 +22,18 @@
 [[projects]]
   branch = "master"
   name = "github.com/hashicorp/hcl"
-  packages = [".","hcl/ast","hcl/parser","hcl/printer","hcl/scanner","hcl/strconv","hcl/token","json/parser","json/scanner","json/token"]
+  packages = [
+    ".",
+    "hcl/ast",
+    "hcl/parser",
+    "hcl/printer",
+    "hcl/scanner",
+    "hcl/strconv",
+    "hcl/token",
+    "json/parser",
+    "json/scanner",
+    "json/token"
+  ]
   revision = "ef8a98b0bbce4a65b5aa4c368430a80ddc533168"
 
 [[projects]]
@@ -30,18 +41,6 @@
   packages = ["."]
   revision = "76626ae9c91c4f2a10f34cad8ce83ea42c93bb75"
   version = "v1.0"
-
-[[projects]]
-  name = "github.com/kr/pretty"
-  packages = ["."]
-  revision = "73f6ac0b30a98e433b289500d779f50c1a6f0712"
-  version = "v0.1.0"
-
-[[projects]]
-  name = "github.com/kr/text"
-  packages = ["."]
-  revision = "e2ffdb16a802fe2bb95e2e35ff34f0e53aeef34f"
-  version = "v0.1.0"
 
 [[projects]]
   branch = "master"
@@ -63,7 +62,13 @@
 
 [[projects]]
   name = "github.com/mmcdole/gofeed"
-  packages = [".","atom","extensions","internal/shared","rss"]
+  packages = [
+    ".",
+    "atom",
+    "extensions",
+    "internal/shared",
+    "rss"
+  ]
   revision = "42010a154d249f5f753dfe03a6390b59671e403e"
   version = "v1.0.0-beta2"
 
@@ -82,7 +87,10 @@
 [[projects]]
   branch = "master"
   name = "github.com/spf13/afero"
-  packages = [".","mem"]
+  packages = [
+    ".",
+    "mem"
+  ]
   revision = "787d034dfe70e44075ccc060d346146ef53270ad"
 
 [[projects]]
@@ -118,7 +126,11 @@
 [[projects]]
   branch = "master"
   name = "golang.org/x/net"
-  packages = ["html","html/atom","html/charset"]
+  packages = [
+    "html",
+    "html/atom",
+    "html/charset"
+  ]
   revision = "1e491301e022f8f977054da4c2d852decd59571f"
 
 [[projects]]
@@ -130,7 +142,30 @@
 [[projects]]
   branch = "master"
   name = "golang.org/x/text"
-  packages = ["encoding","encoding/charmap","encoding/htmlindex","encoding/internal","encoding/internal/identifier","encoding/japanese","encoding/korean","encoding/simplifiedchinese","encoding/traditionalchinese","encoding/unicode","internal/gen","internal/language","internal/language/compact","internal/tag","internal/triegen","internal/ucd","internal/utf8internal","language","runes","transform","unicode/cldr","unicode/norm"]
+  packages = [
+    "encoding",
+    "encoding/charmap",
+    "encoding/htmlindex",
+    "encoding/internal",
+    "encoding/internal/identifier",
+    "encoding/japanese",
+    "encoding/korean",
+    "encoding/simplifiedchinese",
+    "encoding/traditionalchinese",
+    "encoding/unicode",
+    "internal/gen",
+    "internal/language",
+    "internal/language/compact",
+    "internal/tag",
+    "internal/triegen",
+    "internal/ucd",
+    "internal/utf8internal",
+    "language",
+    "runes",
+    "transform",
+    "unicode/cldr",
+    "unicode/norm"
+  ]
   revision = "5c1cf69b5978e5a34c5f9ba09a83e56acc4b7877"
 
 [[projects]]
@@ -142,6 +177,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "2bf65165ad698d590a7cdae489643413c9952868c848ddfa74da890d7c7c7b66"
+  inputs-digest = "d83344660c0aac82fe934b1c67cfd904a17936660433e0afb65386c50a8cbfa6"
   solver-name = "gps-cdcl"
   solver-version = 1

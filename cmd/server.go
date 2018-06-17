@@ -17,12 +17,9 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/kr/pretty"
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
-
-	"github.com/dashotv/grimoire/config"
 	"github.com/dashotv/grimoire/parser"
+	"github.com/dashotv/server/models"
+	"github.com/spf13/cobra"
 )
 
 // serverCmd represents the server command
@@ -48,21 +45,15 @@ func init() {
 }
 
 func runServer(cmd *cobra.Command, args []string) {
-	cfg := &config.Config{}
-	err := viper.Unmarshal(cfg)
-	if err != nil {
-		fmt.Errorf("failed to parse config: %s", err)
-	}
-
-	cfg.Compile()
-
 	gp := parser.NewParser(cfg)
 	// use cron to run this regularly
 	// use goroutines for multiple feed processors
 	list := gp.Parse()
 	for _, r := range list {
-		//fmt.Printf("release: %#v\n", r)
-		r.CalculateChecksum()
-		pretty.Print(r, "\n")
+		db := models.DB.Create(r)
+		if db.Error != nil && models.IsFatalError(db.Error) {
+			fmt.Printf("error inserting: %T %#v\n", db.Error, db.Error)
+		}
+		//pretty.Print(r, "\n")
 	}
 }

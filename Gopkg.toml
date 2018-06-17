@@ -17,7 +17,7 @@
 ## "ignored" lists a set of packages (not projects) that are ignored when
 ## dep statically analyzes source code. Ignored packages can be in this project,
 ## or in a dependency.
-# ignored = ["github.com/user/project/badpkg"]
+ignored = ["github.com/dashotv/server/models"]
 
 ## Constraints are rules for how directly imported projects
 ## may be incorporated into the depgraph. They are respected by
@@ -63,12 +63,6 @@
 ## enforce that the alternate location is used for that project, regardless of
 ## what source location any dependent projects specify.
 # source = "https://github.com/myfork/package.git"
-
-
-
-[[constraint]]
-  name = "github.com/inconshreveable/mousetrap"
-  version = "1.0.0"
 
 [[constraint]]
   branch = "master"

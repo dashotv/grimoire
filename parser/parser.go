@@ -2,9 +2,10 @@ package parser
 
 import (
 	"fmt"
-	"github.com/mmcdole/gofeed"
 	"strconv"
 	"strings"
+
+	"github.com/mmcdole/gofeed"
 
 	"github.com/dashotv/grimoire/config"
 	"github.com/dashotv/server/models"

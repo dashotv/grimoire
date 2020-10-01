@@ -18,10 +18,12 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/dashotv/grimoire/config"
-	"github.com/mitchellh/go-homedir"
+	homedir "github.com/mitchellh/go-homedir"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+
+	"github.com/dashotv/grimoire/config"
 )
 
 var cfgFile string
@@ -81,13 +83,13 @@ func initConfig() {
 
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil {
-		fmt.Println("Using config file:", viper.ConfigFileUsed())
+		logrus.Println("Using config file:", viper.ConfigFileUsed())
 	}
 
 	err := viper.Unmarshal(cfg)
 	if err != nil {
-		fmt.Errorf("failed to parse config: %s", err)
+		logrus.Fatalf("failed to parse config: %s", err)
 	}
 
-	cfg.Compile()
+	//cfg.Compile()
 }

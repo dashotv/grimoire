@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kr/pretty"
+
 	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -37,15 +39,31 @@ type Download struct {
 	} `json:"download_files" bson:"download_files"`
 }
 
-func TestQueryBuilder(t *testing.T) {
-	s, err := NewStore[Download]("mongodb://localhost:27017", "seer_development", "downloads")
+func TestStore_Query(t *testing.T) {
+	s, err := NewStore[*Download]("mongodb://localhost:27017", "seer_development", "downloads")
 	assert.NoError(t, err)
 	assert.NotNil(t, s)
 
 	q := s.Query()
-	d, err := q.In("status", []string{"searching", "loading", "managing", "downloading", "reviewing"}).Run()
+	list, err := q.In("status", []string{"searching", "loading", "managing", "downloading", "reviewing"}).Run()
 	assert.NoError(t, err)
-	assert.NotNil(t, d)
+	assert.NotNil(t, list)
 
-	fmt.Printf("%#v\n", d)
+	//fmt.Printf("%# v\n", pretty.Formatter(list))
+	for _, e := range list {
+		fmt.Printf("download: %s\n", e.ID)
+	}
+}
+
+func TestStore_Find(t *testing.T) {
+	s, err := NewStore[*Download]("mongodb://localhost:27017", "seer_development", "downloads")
+	assert.NoError(t, err)
+	assert.NotNil(t, s)
+
+	o := &Download{}
+	err = s.Find("62f661903359bbbe05a5bb2c", o)
+	assert.NoError(t, err)
+	assert.NotNil(t, o)
+
+	fmt.Printf("%# v\n", pretty.Formatter(o))
 }

@@ -1,12 +1,13 @@
 package grimoire
 
 import (
+	"github.com/kamva/mgm/v3"
 	"github.com/kamva/mgm/v3/operator"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type QueryBuilder[OUTPUT any] struct {
+type QueryBuilder[OUTPUT mgm.Model] struct {
 	store  *Store[OUTPUT]
 	values bson.M
 	limit  int64

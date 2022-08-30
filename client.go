@@ -43,6 +43,18 @@ type Document struct {
 	mgm.DefaultModel `bson:",inline"`
 }
 
+func (d *Document) PrepareID(id interface{}) (interface{}, error) {
+	return d.IDField.PrepareID(id)
+}
+
+func (d *Document) GetID() interface{} {
+	return d.IDField.GetID()
+}
+
+func (d *Document) SetID(id interface{}) {
+	d.IDField.SetID(id)
+}
+
 // https://stackoverflow.com/questions/58984435/how-to-ignore-nulls-while-unmarshalling-a-mongodb-document
 type nullawareDecoder struct {
 	defDecoder bsoncodec.ValueDecoder

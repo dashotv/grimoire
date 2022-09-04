@@ -13,7 +13,7 @@ type Store[OUTPUT mgm.Model] struct {
 	Collection *mgm.Collection
 }
 
-func New[OUTPUT mgm.Model](URI, database, collection string) (*Store[OUTPUT], error) {
+func New[OUTPUT mgm.Model](URI, database, collection string) (*Store[mgm.Model], error) {
 	c, err := newClient(URI)
 	if err != nil {
 		return nil, err

@@ -7,13 +7,13 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type Store[OUTPUT mgm.Model] struct {
+type Store[T mgm.Model] struct {
 	Client     *mongo.Client
 	Database   *mongo.Database
 	Collection *mgm.Collection
 }
 
-func New[OUTPUT mgm.Model](URI, database, collection string) (*Store[mgm.Model], error) {
+func New[T mgm.Model](URI, database, collection string) (*Store[T], error) {
 	c, err := newClient(URI)
 	if err != nil {
 		return nil, err
@@ -22,7 +22,7 @@ func New[OUTPUT mgm.Model](URI, database, collection string) (*Store[mgm.Model],
 	db := c.Database(database)
 	col := mgm.NewCollection(db, collection)
 
-	s := &Store[OUTPUT]{
+	s := &Store[T]{
 		Client:     c,
 		Database:   db,
 		Collection: col,
@@ -30,8 +30,8 @@ func New[OUTPUT mgm.Model](URI, database, collection string) (*Store[mgm.Model],
 	return s, nil
 }
 
-func (s *Store[OUTPUT]) FindByID(id primitive.ObjectID, output OUTPUT) error {
-	err := s.Collection.FindByID(id, output)
+func (s *Store[T]) FindByID(id primitive.ObjectID, out T) error {
+	err := s.Collection.FindByID(id, out)
 	if err != nil {
 		return err
 	}
@@ -39,30 +39,30 @@ func (s *Store[OUTPUT]) FindByID(id primitive.ObjectID, output OUTPUT) error {
 	return nil
 }
 
-func (s *Store[OUTPUT]) Find(id string, output OUTPUT) error {
+func (s *Store[T]) Find(id string, out T) error {
 	oid, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return err
 	}
-	return s.FindByID(oid, output)
+	return s.FindByID(oid, out)
 }
 
-func (s *Store[OUTPUT]) Save(o *Document) error {
+func (s *Store[T]) Save(o *Document) error {
 	// TODO: if id is nil create otherwise, call update
 	return s.Collection.Create(o)
 }
 
-func (s *Store[OUTPUT]) Update(o *Document) error {
+func (s *Store[T]) Update(o *Document) error {
 	return s.Collection.Update(o)
 }
 
-func (s *Store[OUTPUT]) Delete(o *Document) error {
+func (s *Store[T]) Delete(o *Document) error {
 	return s.Collection.Delete(o)
 }
 
-func (s *Store[OUTPUT]) Query() *QueryBuilder[OUTPUT] {
+func (s *Store[T]) Query() *QueryBuilder[T] {
 	values := make(bson.M)
-	return &QueryBuilder[OUTPUT]{
+	return &QueryBuilder[T]{
 		store:  s,
 		values: values,
 		limit:  25,

@@ -7,38 +7,38 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type QueryBuilder[OUTPUT mgm.Model] struct {
-	store  *Store[OUTPUT]
+type QueryBuilder[T mgm.Model] struct {
+	store  *Store[T]
 	values bson.M
 	limit  int64
 	skip   int64
 	sort   bson.D
 }
 
-func (q *QueryBuilder[OUTPUT]) addSort(field string, value int) *QueryBuilder[OUTPUT] {
+func (q *QueryBuilder[T]) addSort(field string, value int) *QueryBuilder[T] {
 	q.sort = append(q.sort, bson.E{Key: field, Value: value})
 	return q
 }
 
-func (q *QueryBuilder[OUTPUT]) Asc(field string) *QueryBuilder[OUTPUT] {
+func (q *QueryBuilder[T]) Asc(field string) *QueryBuilder[T] {
 	return q.addSort(field, 1)
 }
 
-func (q *QueryBuilder[OUTPUT]) Desc(field string) *QueryBuilder[OUTPUT] {
+func (q *QueryBuilder[T]) Desc(field string) *QueryBuilder[T] {
 	return q.addSort(field, -1)
 }
 
-func (q *QueryBuilder[OUTPUT]) Limit(limit int) *QueryBuilder[OUTPUT] {
+func (q *QueryBuilder[T]) Limit(limit int) *QueryBuilder[T] {
 	q.limit = int64(limit)
 	return q
 }
 
-func (q *QueryBuilder[OUTPUT]) Skip(skip int) *QueryBuilder[OUTPUT] {
+func (q *QueryBuilder[T]) Skip(skip int) *QueryBuilder[T] {
 	q.skip = int64(skip)
 	return q
 }
 
-func (q *QueryBuilder[OUTPUT]) options() *options.FindOptions {
+func (q *QueryBuilder[T]) options() *options.FindOptions {
 	o := &options.FindOptions{}
 	o.SetLimit(q.limit)
 	o.SetSkip(q.skip)
@@ -46,8 +46,8 @@ func (q *QueryBuilder[OUTPUT]) options() *options.FindOptions {
 	return o
 }
 
-func (q *QueryBuilder[OUTPUT]) Run() ([]OUTPUT, error) {
-	result := make([]OUTPUT, 0)
+func (q *QueryBuilder[T]) Run() ([]T, error) {
+	result := make([]T, 0)
 	err := q.store.Collection.SimpleFind(&result, q.values, q.options())
 	if err != nil {
 		return nil, err
@@ -56,42 +56,42 @@ func (q *QueryBuilder[OUTPUT]) Run() ([]OUTPUT, error) {
 	return result, nil
 }
 
-func (q *QueryBuilder[OUTPUT]) Where(key string, value interface{}) *QueryBuilder[OUTPUT] {
+func (q *QueryBuilder[T]) Where(key string, value interface{}) *QueryBuilder[T] {
 	q.values[key] = bson.M{operator.Eq: value}
 	return q
 }
 
-func (q *QueryBuilder[OUTPUT]) In(key string, value interface{}) *QueryBuilder[OUTPUT] {
+func (q *QueryBuilder[T]) In(key string, value interface{}) *QueryBuilder[T] {
 	q.values[key] = bson.M{operator.In: value}
 	return q
 }
 
-func (q *QueryBuilder[OUTPUT]) NotIn(key string, value interface{}) *QueryBuilder[OUTPUT] {
+func (q *QueryBuilder[T]) NotIn(key string, value interface{}) *QueryBuilder[T] {
 	q.values[key] = bson.M{operator.Nin: value}
 	return q
 }
 
-func (q *QueryBuilder[OUTPUT]) NotEqual(key string, value interface{}) *QueryBuilder[OUTPUT] {
+func (q *QueryBuilder[T]) NotEqual(key string, value interface{}) *QueryBuilder[T] {
 	q.values[key] = bson.M{operator.Ne: value}
 	return q
 }
 
-func (q *QueryBuilder[OUTPUT]) LessThan(key string, value interface{}) *QueryBuilder[OUTPUT] {
+func (q *QueryBuilder[T]) LessThan(key string, value interface{}) *QueryBuilder[T] {
 	q.values[key] = bson.M{operator.Lt: value}
 	return q
 }
 
-func (q *QueryBuilder[OUTPUT]) LessThanEqual(key string, value interface{}) *QueryBuilder[OUTPUT] {
+func (q *QueryBuilder[T]) LessThanEqual(key string, value interface{}) *QueryBuilder[T] {
 	q.values[key] = bson.M{operator.Lte: value}
 	return q
 }
 
-func (q *QueryBuilder[OUTPUT]) GreaterThan(key string, value interface{}) *QueryBuilder[OUTPUT] {
+func (q *QueryBuilder[T]) GreaterThan(key string, value interface{}) *QueryBuilder[T] {
 	q.values[key] = bson.M{operator.Gt: value}
 	return q
 }
 
-func (q *QueryBuilder[OUTPUT]) GreaterThanEqual(key string, value interface{}) *QueryBuilder[OUTPUT] {
+func (q *QueryBuilder[T]) GreaterThanEqual(key string, value interface{}) *QueryBuilder[T] {
 	q.values[key] = bson.M{operator.Gte: value}
 	return q
 }

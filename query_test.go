@@ -51,7 +51,7 @@ func TestStore_Query(t *testing.T) {
 
 	//fmt.Printf("%# v\n", pretty.Formatter(list))
 	for _, e := range list {
-		fmt.Printf("download: %s\n", e.ID)
+		fmt.Printf("download: %s\n", e.ID.Hex())
 	}
 }
 

@@ -40,7 +40,7 @@ type Download struct {
 }
 
 func TestStore_Query(t *testing.T) {
-	s, err := NewStore[*Download]("mongodb://localhost:27017", "seer_development", "downloads")
+	s, err := New[*Download]("mongodb://localhost:27017", "seer_development", "downloads")
 	assert.NoError(t, err)
 	assert.NotNil(t, s)
 
@@ -56,7 +56,7 @@ func TestStore_Query(t *testing.T) {
 }
 
 func TestStore_Find(t *testing.T) {
-	s, err := NewStore[*Download]("mongodb://localhost:27017", "seer_development", "downloads")
+	s, err := New[*Download]("mongodb://localhost:27017", "seer_development", "downloads")
 	assert.NoError(t, err)
 	assert.NotNil(t, s)
 

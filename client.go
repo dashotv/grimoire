@@ -10,49 +10,25 @@ import (
 	"go.mongodb.org/mongo-driver/bson/bsoncodec"
 	"go.mongodb.org/mongo-driver/bson/bsonrw"
 	"go.mongodb.org/mongo-driver/bson/bsontype"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-//type Client struct {
-//	client *mongo.Client
-//}
-//
-//func New(URI string) (*Client, error) {
-//	err := mgm.SetDefaultConfig(nil, "golem", CustomClientOptions("mongodb://localhost:27017/"))
-//	if err != nil {
-//		panic(err)
-//	}
-//
-//	c, err := mgm.NewClient(CustomClientOptions(uri))
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	return &Client{client: c}, nil
-//}
+func newClient(URI string) (*mongo.Client, error) {
+	c, err := mgm.NewClient(CustomClientOptions(URI))
+	if err != nil {
+		return nil, err
+	}
+
+	return c, nil
+}
 
 func init() {
 	// TODO: this shouldn't be necessary
-	err := mgm.SetDefaultConfig(nil, "golem", CustomClientOptions("mongodb://localhost:27017/"))
+	err := mgm.SetDefaultConfig(nil, "grimoire", CustomClientOptions("mongodb://localhost:27017/"))
 	if err != nil {
 		panic(err)
 	}
-}
-
-type Document struct {
-	mgm.DefaultModel `bson:",inline"`
-}
-
-func (d *Document) PrepareID(id interface{}) (interface{}, error) {
-	return d.IDField.PrepareID(id)
-}
-
-func (d *Document) GetID() interface{} {
-	return d.IDField.GetID()
-}
-
-func (d *Document) SetID(id interface{}) {
-	d.IDField.SetID(id)
 }
 
 // https://stackoverflow.com/questions/58984435/how-to-ignore-nulls-while-unmarshalling-a-mongodb-document

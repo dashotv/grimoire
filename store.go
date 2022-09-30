@@ -60,6 +60,10 @@ func (s *Store[T]) Delete(o *Document) error {
 	return s.Collection.Delete(o)
 }
 
+func (s *Store[T]) Count() (int64, error) {
+	return s.Collection.CountDocuments(mgm.Ctx(), bson.M{})
+}
+
 func (s *Store[T]) Query() *QueryBuilder[T] {
 	values := make(bson.M)
 	return &QueryBuilder[T]{

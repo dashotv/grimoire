@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/kr/pretty"
-
 	"github.com/stretchr/testify/assert"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -39,6 +39,52 @@ type Download struct {
 	} `json:"download_files" bson:"download_files"`
 }
 
+type Medium struct {
+	Document `bson:",inline"` // include mgm.DefaultModel
+	//ID        primitive.ObjectID `json:"_id" bson:"_id,omitempty"`
+	//CreatedAt time.Time          `json:"created_at" bson:"created_at"`
+	//UpdatedAt time.Time          `json:"updated_at" bson:"updated_at"`
+	Type         string           `json:"type" bson:"_type"`
+	Kind         primitive.Symbol `json:"kind" bson:"kind"`
+	Source       string           `json:"source" bson:"source"`
+	SourceId     string           `json:"source_id" bson:"source_id"`
+	Title        string           `json:"title" bson:"title"`
+	Description  string           `json:"description" bson:"description"`
+	Slug         string           `json:"slug" bson:"slug"`
+	Text         []string         `json:"text" bson:"text"`
+	Display      string           `json:"display" bson:"display"`
+	Directory    string           `json:"directory" bson:"directory"`
+	Search       string           `json:"search" bson:"search"`
+	SearchParams struct {
+		Type       string `json:"type" bson:"type"`
+		Verified   bool   `json:"verified" bson:"verified"`
+		Group      string `json:"group" bson:"group"`
+		Author     string `json:"author" bson:"author"`
+		Resolution int    `json:"resolution" bson:"resolution"`
+		Source     string `json:"source" bson:"source"`
+		Uncensored bool   `json:"uncensored" bson:"uncensored"`
+		Bluray     bool   `json:"bluray" bson:"bluray"`
+	} `json:"search_params" bson:"search_params"`
+	Active      bool      `json:"active" bson:"active"`
+	Downloaded  bool      `json:"downloaded" bson:"downloaded"`
+	Completed   bool      `json:"completed" bson:"completed"`
+	Skipped     bool      `json:"skipped" bson:"skipped"`
+	Watched     bool      `json:"watched" bson:"watched"`
+	Broken      bool      `json:"broken" bson:"broken"`
+	ReleaseDate time.Time `json:"release_date" bson:"release_date"`
+	Paths       []struct {
+		Id        primitive.ObjectID `json:"id" bson:"_id"`
+		Type      primitive.Symbol   `json:"type" bson:"type"`
+		Remote    string             `json:"remote" bson:"remote"`
+		Local     string             `json:"local" bson:"local"`
+		Extension string             `json:"extension" bson:"extension"`
+		Size      int                `json:"size" bson:"size"`
+		UpdatedAt time.Time          `json:"updated_at" bson:"updated_at"`
+	} `json:"paths" bson:"paths"`
+	Cover      string `json:"cover" bson:"cover"`
+	Background string `json:"background" bson:"background"`
+}
+
 func TestStore_Query(t *testing.T) {
 	s, err := New[*Download]("mongodb://localhost:27017", "seer_development", "downloads")
 	assert.NoError(t, err)
@@ -66,4 +112,24 @@ func TestStore_Find(t *testing.T) {
 	assert.NotNil(t, o)
 
 	fmt.Printf("%# v\n", pretty.Formatter(o))
+}
+
+func TestStore_CountDownloads(t *testing.T) {
+	s, err := New[*Download]("mongodb://localhost:27017", "seer_development", "downloads")
+	assert.NoError(t, err)
+	assert.NotNil(t, s)
+
+	count, err := s.Count(bson.M{})
+	assert.NoError(t, err)
+	assert.Equal(t, int64(768), count, "download count")
+}
+
+func TestStore_CountSeries(t *testing.T) {
+	s, err := New[*Medium]("mongodb://localhost:27017", "seer_development", "media")
+	assert.NoError(t, err)
+	assert.NotNil(t, s)
+
+	count, err := s.Count(bson.M{"_type": "Series"})
+	assert.NoError(t, err)
+	assert.Equal(t, int64(1289), count, "series count")
 }

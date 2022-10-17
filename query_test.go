@@ -114,6 +114,29 @@ func TestStore_Find(t *testing.T) {
 	fmt.Printf("%# v\n", pretty.Formatter(o))
 }
 
+func TestStore_Save(t *testing.T) {
+	s, err := New[*Download]("mongodb://localhost:27017", "seer_development", "downloads")
+	assert.NoError(t, err)
+	assert.NotNil(t, s)
+
+	o := &Download{}
+	err = s.Find("62f661903359bbbe05a5bb2c", o)
+	assert.NoError(t, err)
+	assert.NotNil(t, o)
+	//fmt.Printf("%# v\n", pretty.Formatter(o))
+
+	o.Status = "searching"
+	err = s.Update(o)
+	assert.NoError(t, err)
+
+	o2 := &Download{}
+	err = s.Find("62f661903359bbbe05a5bb2c", o2)
+	assert.NoError(t, err)
+	assert.NotNil(t, o)
+
+	assert.Equal(t, "searching", o.Status, "status should match")
+}
+
 func TestStore_CountDownloads(t *testing.T) {
 	s, err := New[*Download]("mongodb://localhost:27017", "seer_development", "downloads")
 	assert.NoError(t, err)
@@ -121,7 +144,7 @@ func TestStore_CountDownloads(t *testing.T) {
 
 	count, err := s.Count(bson.M{})
 	assert.NoError(t, err)
-	assert.Equal(t, int64(768), count, "download count")
+	assert.Equal(t, int64(795), count, "download count")
 }
 
 func TestStore_CountSeries(t *testing.T) {
@@ -131,5 +154,5 @@ func TestStore_CountSeries(t *testing.T) {
 
 	count, err := s.Count(bson.M{"_type": "Series"})
 	assert.NoError(t, err)
-	assert.Equal(t, int64(1289), count, "series count")
+	assert.Equal(t, int64(1293), count, "series count")
 }

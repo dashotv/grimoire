@@ -47,16 +47,16 @@ func (s *Store[T]) Find(id string, out T) error {
 	return s.FindByID(oid, out)
 }
 
-func (s *Store[T]) Save(o *Document) error {
+func (s *Store[T]) Save(o T) error {
 	// TODO: if id is nil create otherwise, call update
 	return s.Collection.Create(o)
 }
 
-func (s *Store[T]) Update(o *Document) error {
+func (s *Store[T]) Update(o T) error {
 	return s.Collection.Update(o)
 }
 
-func (s *Store[T]) Delete(o *Document) error {
+func (s *Store[T]) Delete(o T) error {
 	return s.Collection.Delete(o)
 }
 

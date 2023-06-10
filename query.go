@@ -9,7 +9,7 @@ import (
 
 type QueryBuilder[T mgm.Model] struct {
 	store  *Store[T]
-	values bson.M
+	values []bson.M
 	limit  int64
 	skip   int64
 	sort   bson.D
@@ -48,7 +48,8 @@ func (q *QueryBuilder[T]) options() *options.FindOptions {
 
 func (q *QueryBuilder[T]) Run() ([]T, error) {
 	result := make([]T, 0)
-	err := q.store.Collection.SimpleFind(&result, q.values, q.options())
+	filter := bson.M{"$and": q.values}
+	err := q.store.Collection.SimpleFind(&result, filter, q.options())
 	if err != nil {
 		return nil, err
 	}
@@ -57,41 +58,41 @@ func (q *QueryBuilder[T]) Run() ([]T, error) {
 }
 
 func (q *QueryBuilder[T]) Where(key string, value interface{}) *QueryBuilder[T] {
-	q.values[key] = bson.M{operator.Eq: value}
+	q.values = append(q.values, bson.M{key: bson.M{operator.Eq: value}})
 	return q
 }
 
 func (q *QueryBuilder[T]) In(key string, value interface{}) *QueryBuilder[T] {
-	q.values[key] = bson.M{operator.In: value}
+	q.values = append(q.values, bson.M{key: bson.M{operator.In: value}})
 	return q
 }
 
 func (q *QueryBuilder[T]) NotIn(key string, value interface{}) *QueryBuilder[T] {
-	q.values[key] = bson.M{operator.Nin: value}
+	q.values = append(q.values, bson.M{key: bson.M{operator.Nin: value}})
 	return q
 }
 
 func (q *QueryBuilder[T]) NotEqual(key string, value interface{}) *QueryBuilder[T] {
-	q.values[key] = bson.M{operator.Ne: value}
+	q.values = append(q.values, bson.M{key: bson.M{operator.Ne: value}})
 	return q
 }
 
 func (q *QueryBuilder[T]) LessThan(key string, value interface{}) *QueryBuilder[T] {
-	q.values[key] = bson.M{operator.Lt: value}
+	q.values = append(q.values, bson.M{key: bson.M{operator.Lt: value}})
 	return q
 }
 
 func (q *QueryBuilder[T]) LessThanEqual(key string, value interface{}) *QueryBuilder[T] {
-	q.values[key] = bson.M{operator.Lte: value}
+	q.values = append(q.values, bson.M{key: bson.M{operator.Lte: value}})
 	return q
 }
 
 func (q *QueryBuilder[T]) GreaterThan(key string, value interface{}) *QueryBuilder[T] {
-	q.values[key] = bson.M{operator.Gt: value}
+	q.values = append(q.values, bson.M{key: bson.M{operator.Gt: value}})
 	return q
 }
 
 func (q *QueryBuilder[T]) GreaterThanEqual(key string, value interface{}) *QueryBuilder[T] {
-	q.values[key] = bson.M{operator.Gte: value}
+	q.values = append(q.values, bson.M{key: bson.M{operator.Gte: value}})
 	return q
 }

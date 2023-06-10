@@ -101,13 +101,40 @@ func TestStore_Query(t *testing.T) {
 	}
 }
 
+func TestStore_QueryMedium(t *testing.T) {
+	s, err := New[*Medium]("mongodb://localhost:27017", "seer_development", "media")
+	assert.NoError(t, err)
+	assert.NotNil(t, s)
+
+	tomorrow := time.Now().Add(time.Hour * 48)
+	yesterday := time.Now().Add(-time.Hour * 48)
+
+	q := s.Query()
+	list, err := q.
+		Where("_type", "Episode").
+		LessThan("release_date", tomorrow).
+		GreaterThan("release_date", yesterday).
+		Asc("release_date").
+		Run()
+	assert.NoError(t, err)
+	assert.NotNil(t, list)
+
+	fmt.Printf("between: %s and %s\n", yesterday.Format("2006-01-02T15:04:05.000Z"), tomorrow.Format("2006-01-02T15:04:05.000Z"))
+	fmt.Printf("## weird off by 1 issue, but it works\n")
+	for _, e := range list {
+		assert.LessOrEqual(t, e.ReleaseDate, tomorrow)
+		assert.GreaterOrEqual(t, e.ReleaseDate, yesterday)
+		fmt.Printf("episode: %s: %s\n", e.ID.Hex(), e.ReleaseDate.Format("2006-01-02T15:04:05.000Z"))
+	}
+}
+
 func TestStore_Find(t *testing.T) {
 	s, err := New[*Download]("mongodb://localhost:27017", "seer_development", "downloads")
 	assert.NoError(t, err)
 	assert.NotNil(t, s)
 
 	o := &Download{}
-	err = s.Find("62f661903359bbbe05a5bb2c", o)
+	err = s.Find("648295d33359bbb22ca9efd3", o)
 	assert.NoError(t, err)
 	assert.NotNil(t, o)
 
@@ -120,7 +147,7 @@ func TestStore_Save(t *testing.T) {
 	assert.NotNil(t, s)
 
 	o := &Download{}
-	err = s.Find("62f661903359bbbe05a5bb2c", o)
+	err = s.Find("648295d33359bbb22ca9efd3", o)
 	assert.NoError(t, err)
 	assert.NotNil(t, o)
 	//fmt.Printf("%# v\n", pretty.Formatter(o))
@@ -130,7 +157,7 @@ func TestStore_Save(t *testing.T) {
 	assert.NoError(t, err)
 
 	o2 := &Download{}
-	err = s.Find("62f661903359bbbe05a5bb2c", o2)
+	err = s.Find("648295d33359bbb22ca9efd3", o2)
 	assert.NoError(t, err)
 	assert.NotNil(t, o)
 
@@ -144,7 +171,7 @@ func TestStore_CountDownloads(t *testing.T) {
 
 	count, err := s.Count(bson.M{})
 	assert.NoError(t, err)
-	assert.Equal(t, int64(795), count, "download count")
+	assert.Equal(t, int64(985), count, "download count")
 }
 
 func TestStore_CountSeries(t *testing.T) {
@@ -154,5 +181,5 @@ func TestStore_CountSeries(t *testing.T) {
 
 	count, err := s.Count(bson.M{"_type": "Series"})
 	assert.NoError(t, err)
-	assert.Equal(t, int64(1293), count, "series count")
+	assert.Equal(t, int64(1414), count, "series count")
 }

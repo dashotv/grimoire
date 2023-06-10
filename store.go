@@ -65,7 +65,7 @@ func (s *Store[T]) Count(query bson.M) (int64, error) {
 }
 
 func (s *Store[T]) Query() *QueryBuilder[T] {
-	values := make(bson.M)
+	values := make([]bson.M, 0)
 	return &QueryBuilder[T]{
 		store:  s,
 		values: values,

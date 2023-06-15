@@ -48,7 +48,10 @@ func (q *QueryBuilder[T]) options() *options.FindOptions {
 
 func (q *QueryBuilder[T]) Run() ([]T, error) {
 	result := make([]T, 0)
-	filter := bson.M{"$and": q.values}
+	filter := bson.M{}
+	if len(q.values) > 0 {
+		filter["$and"] = q.values
+	}
 	err := q.store.Collection.SimpleFind(&result, filter, q.options())
 	if err != nil {
 		return nil, err

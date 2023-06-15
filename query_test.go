@@ -11,6 +11,9 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+const TOTAL_DOWNLOADS = 1008
+const TOTAL_SERIES = 1439
+
 type Download struct {
 	Document `bson:",inline"` // include mgm.DefaultModel
 	//ID        primitive.ObjectID `json:"_id" bson:"_id,omitempty"`
@@ -127,6 +130,18 @@ func TestStore_QueryMedium(t *testing.T) {
 		fmt.Printf("episode: %s: %s\n", e.ID.Hex(), e.ReleaseDate.Format("2006-01-02T15:04:05.000Z"))
 	}
 }
+func TestStore_QueryEmpty(t *testing.T) {
+	s, err := New[*Medium]("mongodb://localhost:27017", "seer_development", "media")
+	assert.NoError(t, err)
+	assert.NotNil(t, s)
+
+	q := s.Query()
+	list, err := q.
+		Asc("release_date").
+		Run()
+	assert.NoError(t, err)
+	assert.NotNil(t, list)
+}
 
 func TestStore_Find(t *testing.T) {
 	s, err := New[*Download]("mongodb://localhost:27017", "seer_development", "downloads")
@@ -171,7 +186,7 @@ func TestStore_CountDownloads(t *testing.T) {
 
 	count, err := s.Count(bson.M{})
 	assert.NoError(t, err)
-	assert.Equal(t, int64(985), count, "download count")
+	assert.Equal(t, int64(TOTAL_DOWNLOADS), count, "download count")
 }
 
 func TestStore_CountSeries(t *testing.T) {
@@ -181,5 +196,5 @@ func TestStore_CountSeries(t *testing.T) {
 
 	count, err := s.Count(bson.M{"_type": "Series"})
 	assert.NoError(t, err)
-	assert.Equal(t, int64(1414), count, "series count")
+	assert.Equal(t, int64(TOTAL_SERIES), count, "series count")
 }

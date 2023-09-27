@@ -20,19 +20,42 @@ func (q *QueryBuilder[T]) addSort(field string, value int) *QueryBuilder[T] {
 	return q
 }
 
+// Asc adds an ascending sort to the query.
+// NOTE: field should be a valid BSON field.
+//
+// Examples:
+//
+//	Asc("name")
+//	Asc("name").Asc("age")
 func (q *QueryBuilder[T]) Asc(field string) *QueryBuilder[T] {
 	return q.addSort(field, 1)
 }
 
+// Desc adds a descending sort to the query.
+// NOTE: field should be a valid BSON field.
+//
+// Examples:
+//
+//	Desc("name")
+//	Desc("name").Desc("age")
 func (q *QueryBuilder[T]) Desc(field string) *QueryBuilder[T] {
 	return q.addSort(field, -1)
 }
 
+// Limit sets the limit of the query.
+//
+// Examples:
+//
+//	Limit(10)
 func (q *QueryBuilder[T]) Limit(limit int) *QueryBuilder[T] {
 	q.limit = int64(limit)
 	return q
 }
 
+// Skip sets the how many objects to skip of the query.
+// Examples:
+//
+//	Skip(10)
 func (q *QueryBuilder[T]) Skip(skip int) *QueryBuilder[T] {
 	q.skip = int64(skip)
 	return q
@@ -46,6 +69,7 @@ func (q *QueryBuilder[T]) options() *options.FindOptions {
 	return o
 }
 
+// Run executes the query and returns a list of objects.
 func (q *QueryBuilder[T]) Run() ([]T, error) {
 	result := make([]T, 0)
 	filter := bson.M{}
@@ -60,42 +84,90 @@ func (q *QueryBuilder[T]) Run() ([]T, error) {
 	return result, nil
 }
 
-func (q *QueryBuilder[T]) Where(key string, value interface{}) *QueryBuilder[T] {
-	q.values = append(q.values, bson.M{key: bson.M{operator.Eq: value}})
+// Where adds a where clause to the query.
+// NOTE: field should be a valid BSON field.
+//
+// Example:
+//
+//	Where("name", "value")
+func (q *QueryBuilder[T]) Where(field string, value interface{}) *QueryBuilder[T] {
+	q.values = append(q.values, bson.M{field: bson.M{operator.Eq: value}})
 	return q
 }
 
-func (q *QueryBuilder[T]) In(key string, value interface{}) *QueryBuilder[T] {
-	q.values = append(q.values, bson.M{key: bson.M{operator.In: value}})
+// In adds an in clause to the query.
+// NOTE: field should be a valid BSON field.
+//
+// Example:
+//
+//	In("name", []string{"foo", "bar"})
+func (q *QueryBuilder[T]) In(field string, value interface{}) *QueryBuilder[T] {
+	q.values = append(q.values, bson.M{field: bson.M{operator.In: value}})
 	return q
 }
 
-func (q *QueryBuilder[T]) NotIn(key string, value interface{}) *QueryBuilder[T] {
-	q.values = append(q.values, bson.M{key: bson.M{operator.Nin: value}})
+// NotIn adds a not in clause to the query.
+// NOTE: field should be a valid BSON field.
+//
+// Example:
+//
+//	NotIn("name", []string{"foo", "bar"})
+func (q *QueryBuilder[T]) NotIn(field string, value interface{}) *QueryBuilder[T] {
+	q.values = append(q.values, bson.M{field: bson.M{operator.Nin: value}})
 	return q
 }
 
-func (q *QueryBuilder[T]) NotEqual(key string, value interface{}) *QueryBuilder[T] {
-	q.values = append(q.values, bson.M{key: bson.M{operator.Ne: value}})
+// NotEqual adds a not equal clause to the query.
+// NOTE: field should be a valid BSON field.
+//
+// Example:
+//
+//	NotEqual("name", "value")
+func (q *QueryBuilder[T]) NotEqual(field string, value interface{}) *QueryBuilder[T] {
+	q.values = append(q.values, bson.M{field: bson.M{operator.Ne: value}})
 	return q
 }
 
-func (q *QueryBuilder[T]) LessThan(key string, value interface{}) *QueryBuilder[T] {
-	q.values = append(q.values, bson.M{key: bson.M{operator.Lt: value}})
+// LessThan adds a less than clause to the query.
+// NOTE: field should be a valid BSON field.
+//
+// Example:
+//
+//	LessThan("name", 10)
+func (q *QueryBuilder[T]) LessThan(field string, value interface{}) *QueryBuilder[T] {
+	q.values = append(q.values, bson.M{field: bson.M{operator.Lt: value}})
 	return q
 }
 
-func (q *QueryBuilder[T]) LessThanEqual(key string, value interface{}) *QueryBuilder[T] {
-	q.values = append(q.values, bson.M{key: bson.M{operator.Lte: value}})
+// LessThanEqual adds a less than or equal clause to the query.
+// NOTE: field should be a valid BSON field.
+//
+// Example:
+//
+//	LessThanEqual("name", 10)
+func (q *QueryBuilder[T]) LessThanEqual(field string, value interface{}) *QueryBuilder[T] {
+	q.values = append(q.values, bson.M{field: bson.M{operator.Lte: value}})
 	return q
 }
 
-func (q *QueryBuilder[T]) GreaterThan(key string, value interface{}) *QueryBuilder[T] {
-	q.values = append(q.values, bson.M{key: bson.M{operator.Gt: value}})
+// GreaterThan adds a greater than clause to the query.
+// NOTE: field should be a valid BSON field.
+//
+// Example:
+//
+//	GreaterThan("name", 10)
+func (q *QueryBuilder[T]) GreaterThan(field string, value interface{}) *QueryBuilder[T] {
+	q.values = append(q.values, bson.M{field: bson.M{operator.Gt: value}})
 	return q
 }
 
-func (q *QueryBuilder[T]) GreaterThanEqual(key string, value interface{}) *QueryBuilder[T] {
-	q.values = append(q.values, bson.M{key: bson.M{operator.Gte: value}})
+// GreaterThanEqual adds a greater than or equal clause to the query.
+// NOTE: field should be a valid BSON field.
+//
+// Example:
+//
+//	GreaterThanEqual("name", 10)
+func (q *QueryBuilder[T]) GreaterThanEqual(field string, value interface{}) *QueryBuilder[T] {
+	q.values = append(q.values, bson.M{field: bson.M{operator.Gte: value}})
 	return q
 }

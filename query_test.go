@@ -11,8 +11,10 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-const TOTAL_DOWNLOADS = 1008
-const TOTAL_SERIES = 1439
+const TOTAL_DOWNLOADS = 571
+const TOTAL_SERIES = 1469
+
+var createdId primitive.ObjectID
 
 type Download struct {
 	Document `bson:",inline"` // include mgm.DefaultModel
@@ -143,13 +145,37 @@ func TestStore_QueryEmpty(t *testing.T) {
 	assert.NotNil(t, list)
 }
 
+func TestStore_Create(t *testing.T) {
+	s, err := New[*Download]("mongodb://localhost:27017", "seer_development", "downloads")
+	assert.NoError(t, err)
+	assert.NotNil(t, s)
+
+	o := &Download{
+		MediumId:  primitive.NewObjectID(),
+		Auto:      true,
+		Multi:     false,
+		Force:     false,
+		Url:       "https://example.com",
+		ReleaseId: "1234567890",
+		Thash:     "1234567890",
+	}
+
+	err = s.Save(o)
+	assert.NoError(t, err, "save")
+	assert.NotNil(t, o.ID, "id")
+
+	createdId = o.ID
+}
+
 func TestStore_Find(t *testing.T) {
 	s, err := New[*Download]("mongodb://localhost:27017", "seer_development", "downloads")
 	assert.NoError(t, err)
 	assert.NotNil(t, s)
 
+	assert.False(t, createdId.IsZero(), "created id")
+
 	o := &Download{}
-	err = s.Find("648295d33359bbb22ca9efd3", o)
+	err = s.Find(createdId.Hex(), o)
 	assert.NoError(t, err)
 	assert.NotNil(t, o)
 
@@ -162,7 +188,7 @@ func TestStore_Save(t *testing.T) {
 	assert.NotNil(t, s)
 
 	o := &Download{}
-	err = s.Find("648295d33359bbb22ca9efd3", o)
+	err = s.Find(createdId.Hex(), o)
 	assert.NoError(t, err)
 	assert.NotNil(t, o)
 	//fmt.Printf("%# v\n", pretty.Formatter(o))
@@ -172,11 +198,24 @@ func TestStore_Save(t *testing.T) {
 	assert.NoError(t, err)
 
 	o2 := &Download{}
-	err = s.Find("648295d33359bbb22ca9efd3", o2)
+	err = s.Find(createdId.Hex(), o2)
 	assert.NoError(t, err)
 	assert.NotNil(t, o)
 
 	assert.Equal(t, "searching", o.Status, "status should match")
+}
+
+func TestStore_Delete(t *testing.T) {
+	s, err := New[*Download]("mongodb://localhost:27017", "seer_development", "downloads")
+	assert.NoError(t, err)
+	assert.NotNil(t, s)
+
+	assert.False(t, createdId.IsZero(), "created id")
+
+	d := &Download{}
+	d.ID = createdId
+	err = s.Delete(d)
+	assert.NoError(t, err)
 }
 
 func TestStore_CountDownloads(t *testing.T) {

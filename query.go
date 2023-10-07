@@ -48,7 +48,9 @@ func (q *QueryBuilder[T]) Desc(field string) *QueryBuilder[T] {
 //
 //	Limit(10)
 func (q *QueryBuilder[T]) Limit(limit int) *QueryBuilder[T] {
-	q.limit = int64(limit)
+	if limit > 0 {
+		q.limit = int64(limit)
+	}
 	return q
 }
 

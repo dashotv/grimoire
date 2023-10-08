@@ -48,9 +48,7 @@ func (q *QueryBuilder[T]) Desc(field string) *QueryBuilder[T] {
 //
 //	Limit(10)
 func (q *QueryBuilder[T]) Limit(limit int) *QueryBuilder[T] {
-	if limit > 0 {
-		q.limit = int64(limit)
-	}
+	q.limit = int64(limit)
 	return q
 }
 
@@ -65,7 +63,9 @@ func (q *QueryBuilder[T]) Skip(skip int) *QueryBuilder[T] {
 
 func (q *QueryBuilder[T]) options() *options.FindOptions {
 	o := &options.FindOptions{}
-	o.SetLimit(q.limit)
+	if q.limit > 0 {
+		o.SetLimit(q.limit)
+	}
 	o.SetSkip(q.skip)
 	o.SetSort(q.sort)
 	return o

@@ -145,6 +145,29 @@ func TestStore_QueryEmpty(t *testing.T) {
 	assert.NotNil(t, list)
 }
 
+func TestStore_QueryLimit(t *testing.T) {
+	s, err := New[*Download]("mongodb://localhost:27017", "seer_development", "media")
+	assert.NoError(t, err)
+	assert.NotNil(t, s)
+
+	q := s.Query()
+	list, err := q.
+		Asc("release_date").
+		Limit(1).
+		Run()
+	assert.NoError(t, err)
+	assert.NotNil(t, list)
+	assert.Equal(t, 1, len(list))
+
+	q = s.Query()
+	list, err = q.
+		Limit(-1).
+		Run()
+	assert.NoError(t, err)
+	assert.NotNil(t, list)
+	assert.Greater(t, len(list), 25, "should be more than 25")
+}
+
 func TestStore_Create(t *testing.T) {
 	s, err := New[*Download]("mongodb://localhost:27017", "seer_development", "downloads")
 	assert.NoError(t, err)

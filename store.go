@@ -48,8 +48,10 @@ func (s *Store[T]) Find(id string, out T) error {
 }
 
 func (s *Store[T]) Save(o T) error {
-	// TODO: if id is nil create otherwise, call update
-	return s.Collection.Create(o)
+	if o.GetID().(primitive.ObjectID).IsZero() {
+		return s.Collection.Create(o)
+	}
+	return s.Collection.Update(o)
 }
 
 func (s *Store[T]) Update(o T) error {

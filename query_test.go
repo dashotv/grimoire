@@ -11,8 +11,8 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-const TOTAL_DOWNLOADS = 571
-const TOTAL_SERIES = 1469
+const TOTAL_DOWNLOADS = 569
+const TOTAL_SERIES = 1478
 
 var createdId primitive.ObjectID
 
@@ -205,7 +205,30 @@ func TestStore_Find(t *testing.T) {
 	fmt.Printf("%# v\n", pretty.Formatter(o))
 }
 
-func TestStore_Save(t *testing.T) {
+func TestStore_Update(t *testing.T) {
+	s, err := New[*Download]("mongodb://localhost:27017", "seer_development", "downloads")
+	assert.NoError(t, err)
+	assert.NotNil(t, s)
+
+	o := &Download{}
+	err = s.Find(createdId.Hex(), o)
+	assert.NoError(t, err)
+	assert.NotNil(t, o)
+	//fmt.Printf("%# v\n", pretty.Formatter(o))
+
+	o.Status = "searching"
+	err = s.Update(o)
+	assert.NoError(t, err)
+
+	o2 := &Download{}
+	err = s.Find(createdId.Hex(), o2)
+	assert.NoError(t, err)
+	assert.NotNil(t, o)
+
+	assert.Equal(t, "searching", o.Status, "status should match")
+}
+
+func TestStore_SaveUpdate(t *testing.T) {
 	s, err := New[*Download]("mongodb://localhost:27017", "seer_development", "downloads")
 	assert.NoError(t, err)
 	assert.NotNil(t, s)

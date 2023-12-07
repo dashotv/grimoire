@@ -32,6 +32,26 @@ func TestStore_Create(t *testing.T) {
 	createdId = o.ID
 }
 
+func TestStore_CreateWithTransaction(t *testing.T) {
+	s, err := New[*Download]("mongodb://localhost:27017", "seer_development", "downloads")
+	assert.NoError(t, err)
+	assert.NotNil(t, s)
+
+	o := &Download{
+		MediumId:  primitive.NewObjectID(),
+		Auto:      true,
+		Multi:     false,
+		Force:     false,
+		Url:       "https://example.com",
+		ReleaseId: "1234567890",
+		Thash:     "1234567890",
+	}
+
+	err = s.Save(o)
+	assert.NoError(t, err, "save")
+	assert.NotNil(t, o.ID, "id")
+}
+
 func TestStore_Get(t *testing.T) {
 	s, err := New[*Download]("mongodb://localhost:27017", "seer_development", "downloads")
 	assert.NoError(t, err)

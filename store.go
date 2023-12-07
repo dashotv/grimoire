@@ -60,7 +60,7 @@ func (s *Store[T]) Save(o T) error {
 }
 
 func (s *Store[T]) CreateWithTransaction(o T) error {
-	return mgm.Transaction(func(session mongo.Session, ctx mongo.SessionContext) error {
+	return mgm.TransactionWithClient(mgm.Ctx(), s.Client, func(session mongo.Session, ctx mongo.SessionContext) error {
 		err := s.Collection.CreateWithCtx(ctx, o)
 		if err != nil {
 			return err

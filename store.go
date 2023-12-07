@@ -30,6 +30,11 @@ func New[T mgm.Model](URI, database, collection string) (*Store[T], error) {
 	return s, nil
 }
 
+func (s *Store[T]) Get(id primitive.ObjectID, out T) (T, error) {
+	err := s.Collection.FindByID(id, out)
+	return out, err
+}
+
 func (s *Store[T]) FindByID(id primitive.ObjectID, out T) error {
 	err := s.Collection.FindByID(id, out)
 	if err != nil {
@@ -52,6 +57,16 @@ func (s *Store[T]) Save(o T) error {
 		return s.Collection.Create(o)
 	}
 	return s.Collection.Update(o)
+}
+
+func (s *Store[T]) CreateWithTransaction(o T) error {
+	return mgm.Transaction(func(session mongo.Session, ctx mongo.SessionContext) error {
+		err := s.Collection.CreateWithCtx(ctx, o)
+		if err != nil {
+			return err
+		}
+		return session.CommitTransaction(ctx)
+	})
 }
 
 func (s *Store[T]) Update(o T) error {

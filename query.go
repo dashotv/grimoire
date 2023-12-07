@@ -86,6 +86,28 @@ func (q *QueryBuilder[T]) Run() ([]T, error) {
 	return result, nil
 }
 
+// Count executes the query and returns the number of objects.
+func (q *QueryBuilder[T]) Count() (int64, error) {
+	filter := bson.M{}
+	if len(q.values) > 0 {
+		filter["$and"] = q.values
+	}
+	return q.store.Collection.CountDocuments(mgm.Ctx(), filter)
+}
+
+// DeleteMany executes the query and deletes the objects.
+func (q *QueryBuilder[T]) DeleteMany() (int64, error) {
+	filter := bson.M{}
+	if len(q.values) > 0 {
+		filter["$and"] = q.values
+	}
+	n, err := q.store.Collection.DeleteMany(mgm.Ctx(), filter)
+	if err != nil {
+		return 0, err
+	}
+	return n.DeletedCount, nil
+}
+
 // Where adds a where clause to the query.
 // NOTE: field should be a valid BSON field.
 //

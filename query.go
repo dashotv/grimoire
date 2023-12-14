@@ -1,6 +1,8 @@
 package grimoire
 
 import (
+	"fmt"
+
 	"github.com/kamva/mgm/v3"
 	"github.com/kamva/mgm/v3/operator"
 	"go.mongodb.org/mongo-driver/bson"
@@ -13,6 +15,10 @@ type QueryBuilder[T mgm.Model] struct {
 	limit  int64
 	skip   int64
 	sort   bson.D
+}
+
+func (q *QueryBuilder[T]) String() string {
+	return fmt.Sprintf("QueryBuilder[T] %#v", q.values)
 }
 
 func (q *QueryBuilder[T]) addSort(field string, value int) *QueryBuilder[T] {

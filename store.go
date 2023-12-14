@@ -8,9 +8,10 @@ import (
 )
 
 type Store[T mgm.Model] struct {
-	Client     *mongo.Client
-	Database   *mongo.Database
-	Collection *mgm.Collection
+	Client        *mongo.Client
+	Database      *mongo.Database
+	Collection    *mgm.Collection
+	queryDefaults []bson.M
 }
 
 func New[T mgm.Model](URI, database, collection string) (*Store[T], error) {
@@ -23,11 +24,16 @@ func New[T mgm.Model](URI, database, collection string) (*Store[T], error) {
 	col := mgm.NewCollection(db, collection)
 
 	s := &Store[T]{
-		Client:     c,
-		Database:   db,
-		Collection: col,
+		Client:        c,
+		Database:      db,
+		Collection:    col,
+		queryDefaults: []bson.M{},
 	}
 	return s, nil
+}
+
+func (s *Store[T]) SetQueryDefaults(values []bson.M) {
+	s.queryDefaults = append(s.queryDefaults, values...)
 }
 
 func (s *Store[T]) Get(id primitive.ObjectID, out T) (T, error) {
@@ -83,6 +89,9 @@ func (s *Store[T]) Count(query bson.M) (int64, error) {
 
 func (s *Store[T]) Query() *QueryBuilder[T] {
 	values := make([]bson.M, 0)
+	if len(s.queryDefaults) > 0 {
+		values = append(values, s.queryDefaults...)
+	}
 	return &QueryBuilder[T]{
 		store:  s,
 		values: values,

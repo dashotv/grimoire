@@ -3,6 +3,7 @@ package grimoire
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/kr/pretty"
 	"github.com/stretchr/testify/assert"
@@ -170,4 +171,20 @@ func TestStore_CountSeries(t *testing.T) {
 	count, err := s.Count(bson.M{"_type": "Series"})
 	assert.NoError(t, err)
 	assert.Equal(t, int64(TOTAL_SERIES), count, "series count")
+}
+
+func TestStore_QueryDefaults(t *testing.T) {
+	s, err := New[*Download]("mongodb://localhost:27017", "seer_development", "downloads")
+	assert.NoError(t, err)
+	assert.NotNil(t, s)
+	s.SetQueryDefaults([]bson.M{{"status": "done"}})
+
+	q := s.Query().GreaterThan("created_at", time.Now().Add(-30*time.Hour*24)).Limit(100).Desc("created_at")
+	list, err := q.Run()
+	assert.NoError(t, err)
+	assert.NotNil(t, list)
+
+	for _, e := range list {
+		assert.Equal(t, "done", e.Status, "status should match")
+	}
 }

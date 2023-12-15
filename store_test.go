@@ -60,9 +60,13 @@ func TestStore_Get(t *testing.T) {
 
 	assert.False(t, createdId.IsZero(), "created id")
 
-	o, err := s.Get(createdId, &Download{})
+	o, err := s.Get(createdId.Hex(), &Download{})
 	assert.NoError(t, err)
 	assert.NotNil(t, o)
+
+	o2, err := s.GetByID(createdId, &Download{})
+	assert.NoError(t, err)
+	assert.NotNil(t, o2)
 
 	fmt.Printf("%# v\n", pretty.Formatter(o))
 }

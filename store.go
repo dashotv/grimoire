@@ -36,9 +36,17 @@ func (s *Store[T]) SetQueryDefaults(values []bson.M) {
 	s.queryDefaults = append(s.queryDefaults, values...)
 }
 
-func (s *Store[T]) Get(id primitive.ObjectID, out T) (T, error) {
+func (s *Store[T]) GetByID(id primitive.ObjectID, out T) (T, error) {
 	err := s.Collection.FindByID(id, out)
 	return out, err
+}
+
+func (s *Store[T]) Get(id string, out T) (T, error) {
+	oid, err := idFromHex(id)
+	if err != nil {
+		return out, err
+	}
+	return s.GetByID(oid, out)
 }
 
 func (s *Store[T]) FindByID(id primitive.ObjectID, out T) error {
@@ -51,11 +59,19 @@ func (s *Store[T]) FindByID(id primitive.ObjectID, out T) error {
 }
 
 func (s *Store[T]) Find(id string, out T) error {
-	oid, err := primitive.ObjectIDFromHex(id)
+	oid, err := idFromHex(id)
 	if err != nil {
 		return err
 	}
 	return s.FindByID(oid, out)
+}
+
+func idFromHex(id string) (primitive.ObjectID, error) {
+	oid, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return primitive.ObjectID{}, err
+	}
+	return oid, nil
 }
 
 func (s *Store[T]) Save(o T) error {

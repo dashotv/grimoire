@@ -1,7 +1,8 @@
 repo_name: dashotv/grimoire
-report_id: e0d3c30eae74e1b898d46571937fa611
+report_id: 57b1d8536d4ec1bd99046008aed51afb
+version: 0.1
 repo_type: Public
-timestamp: '2023-12-14T10:04:24+00:00'
+timestamp: '2024-01-05T09:04:32+00:00'
 requested_by: shawncatz
 provider: github
 branch: main
@@ -17,6 +18,7 @@ tools:
   category: Languages & Frameworks
   sub_category: Languages
   image_url: https://img.stackshare.io/service/1005/O6AczwfV_400x400.png
+  detection_source_url: https://github.com/dashotv/grimoire
   detection_source: Repo Metadata
 - name: MongoDB
   description: The database for giant ideas
@@ -26,6 +28,7 @@ tools:
   category: Data Stores
   sub_category: Databases
   image_url: https://img.stackshare.io/service/1030/leaf-360x360.png
+  detection_source_url: https://github.com/dashotv/grimoire/blob/main/client.go
   detection_source: client.go
   last_updated_by: Shawn Catanzarite
   last_updated_on: 2022-09-04 03:50:32.000000000 Z
@@ -37,6 +40,7 @@ tools:
   category: Build, Test, Deploy
   sub_category: Version Control System
   image_url: https://img.stackshare.io/service/1046/git.png
+  detection_source_url: https://github.com/dashotv/grimoire
   detection_source: Repo Metadata
 - name: Testify
   description: A toolkit with common assertions and mocks that plays nicely with the
@@ -48,6 +52,7 @@ tools:
   category: Build, Test, Deploy
   sub_category: Go Testing
   image_url: https://img.stackshare.io/service/8695/stretchr.png
+  detection_source_url: https://github.com/dashotv/grimoire/blob/main/go.mod
   detection_source: go.mod
   last_updated_by: Shawn Catanzarite
   last_updated_on: 2023-09-25 04:06:11.000000000 Z

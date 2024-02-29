@@ -14,6 +14,12 @@ const TOTAL_SERIES = 1533
 
 var createdId primitive.ObjectID
 
+type Fake struct {
+	Document `bson:",inline"` // include mgm.DefaultModel
+	Name     string           `json:"name" bson:"name" grimoire:"index"`
+	Age      int              `json:"age" bson:"age" grimoire:"index,desc"`
+}
+
 type Download struct {
 	Document `bson:",inline"` // include mgm.DefaultModel
 	//ID        primitive.ObjectID `json:"_id" bson:"_id,omitempty"`
@@ -144,7 +150,7 @@ func TestStore_QueryEmpty(t *testing.T) {
 }
 
 func TestStore_QueryLimit(t *testing.T) {
-	s, err := New[*Download]("mongodb://localhost:27017", "seer_development", "media")
+	s, err := New[*Download]("mongodb://localhost:27017", "seer_development", "downloads")
 	assert.NoError(t, err)
 	assert.NotNil(t, s)
 

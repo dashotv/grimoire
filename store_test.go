@@ -192,3 +192,15 @@ func TestStore_QueryDefaults(t *testing.T) {
 		assert.Equal(t, "done", e.Status, "status should match")
 	}
 }
+
+func TestStore_Index(t *testing.T) {
+	s, err := New[*Fake]("mongodb://localhost:27017", "grimoire", "fakes")
+	assert.NoError(t, err)
+	assert.NotNil(t, s)
+
+	f := &Fake{Name: "blarg"}
+	err = s.Save(f)
+	assert.NoError(t, err)
+
+	Indexes(s, &Fake{})
+}

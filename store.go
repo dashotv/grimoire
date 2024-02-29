@@ -1,6 +1,10 @@
 package grimoire
 
 import (
+	"fmt"
+	"reflect"
+	"strings"
+
 	"github.com/kamva/mgm/v3"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -12,6 +16,30 @@ type Store[T mgm.Model] struct {
 	Database      *mongo.Database
 	Collection    *mgm.Collection
 	queryDefaults []bson.M
+}
+
+func Indexes[T mgm.Model](s *Store[T], o T) {
+	t := reflect.TypeOf(o)
+	if t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+
+	for i := 0; i < t.NumField(); i++ {
+		field := t.Field(i)
+		if v, ok := field.Tag.Lookup("grimoire"); ok {
+			vals := strings.Split(v, ",")
+			fmt.Printf("vals: %v\n", vals)
+			if vals[0] == "index" {
+				dir := 1
+				if len(vals) > 1 {
+					if vals[1] == "desc" {
+						dir = -1
+					}
+				}
+				s.Collection.Indexes().CreateOne(mgm.Ctx(), mongo.IndexModel{Keys: bson.M{field.Name: dir}})
+			}
+		}
+	}
 }
 
 func New[T mgm.Model](URI, database, collection string) (*Store[T], error) {

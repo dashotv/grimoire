@@ -1,7 +1,6 @@
 package grimoire
 
 import (
-	"fmt"
 	"reflect"
 	"strings"
 
@@ -28,7 +27,6 @@ func Indexes[T mgm.Model](s *Store[T], o T) {
 		field := t.Field(i)
 		if v, ok := field.Tag.Lookup("grimoire"); ok {
 			vals := strings.Split(v, ",")
-			fmt.Printf("vals: %v\n", vals)
 			if vals[0] == "index" {
 				dir := 1
 				if len(vals) > 1 {

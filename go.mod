@@ -1,6 +1,6 @@
 module github.com/dashotv/grimoire
 
-go 1.18
+go 1.22.0
 
 require (
 	github.com/kamva/mgm/v3 v3.5.0

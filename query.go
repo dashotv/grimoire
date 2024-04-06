@@ -92,6 +92,42 @@ func (q *QueryBuilder[T]) Run() ([]T, error) {
 	return result, nil
 }
 
+// Run executes the query and returns a list of objects.
+func (q *QueryBuilder[T]) Batch(size int64, f func(results []T) error) error {
+	filter := bson.M{}
+	if len(q.values) > 0 {
+		filter["$and"] = q.values
+	}
+
+	total, err := q.Count()
+	if err != nil {
+		return err
+	}
+	if total <= size {
+		list, err := q.Run()
+		if err != nil {
+			return err
+		}
+		return f(list)
+	}
+
+	for i := int64(0); i < total; i += size {
+		result := make([]T, 0)
+		q.Skip(int(i))
+		q.Limit(int(size))
+		err := q.store.Collection.SimpleFind(&result, filter, q.options())
+		if err != nil {
+			return err
+		}
+		err = f(result)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 // Raw executes the raw bson.M query and returns a list of objects.
 // NOTE: This does not use the query builder values.
 func (q *QueryBuilder[T]) Raw(query bson.M) ([]T, error) {

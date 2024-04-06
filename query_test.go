@@ -149,6 +149,39 @@ func TestStore_QueryEmpty(t *testing.T) {
 	assert.NotNil(t, list)
 }
 
+func TestStore_QueryOr(t *testing.T) {
+	s, err := New[*Medium]("mongodb://localhost:27017", "seer_development", "media")
+	assert.NoError(t, err)
+	assert.NotNil(t, s)
+
+	q := s.Query().Or(func(qq *QueryBuilder[*Medium]) {
+		qq.Where("_type", "Series").Where("_type", "Movie")
+	})
+	list, err := q.Asc("release_date").Run()
+	assert.NoError(t, err)
+	assert.NotNil(t, list)
+	for _, e := range list {
+		fmt.Printf("medium: %s %s\n", e.Type, e.Title)
+	}
+}
+
+func TestStore_ComplexOr(t *testing.T) {
+	s, err := New[*Medium]("mongodb://localhost:27017", "seer_development", "media")
+	assert.NoError(t, err)
+	assert.NotNil(t, s)
+
+	q := s.Query().ComplexOr(func(qq *QueryBuilder[*Medium], qr *QueryBuilder[*Medium]) {
+		qq.Where("_type", "Movie").Where("kind", "movies3d").Where("title", "Up")
+		qr.Where("_type", "Series").Where("kind", "donghua").Where("title", "The Great Ruler")
+	})
+	list, err := q.Asc("release_date").Run()
+	assert.NoError(t, err)
+	assert.NotNil(t, list)
+	for _, e := range list {
+		fmt.Printf("medium: %s %s %s\n", e.Type, e.Kind, e.Title)
+	}
+}
+
 func TestStore_QueryLimit(t *testing.T) {
 	s, err := New[*Download]("mongodb://localhost:27017", "seer_development", "downloads")
 	assert.NoError(t, err)

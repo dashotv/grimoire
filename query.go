@@ -92,6 +92,18 @@ func (q *QueryBuilder[T]) Run() ([]T, error) {
 	return result, nil
 }
 
+// Raw executes the raw bson.M query and returns a list of objects.
+// NOTE: This does not use the query builder values.
+func (q *QueryBuilder[T]) Raw(query bson.M) ([]T, error) {
+	result := make([]T, 0)
+	err := q.store.Collection.SimpleFind(&result, query, q.options())
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
 // Count executes the query and returns the number of objects.
 func (q *QueryBuilder[T]) Count() (int64, error) {
 	filter := bson.M{}
@@ -199,5 +211,84 @@ func (q *QueryBuilder[T]) GreaterThan(field string, value interface{}) *QueryBui
 //	GreaterThanEqual("name", 10)
 func (q *QueryBuilder[T]) GreaterThanEqual(field string, value interface{}) *QueryBuilder[T] {
 	q.values = append(q.values, bson.M{field: bson.M{operator.Gte: value}})
+	return q
+}
+
+// Exists adds an exists clause to the query to check if a field exists.
+// NOTE: field should be a valid BSON field.
+//
+// Example:
+//
+//	Exists("name")
+func (q *QueryBuilder[T]) Exists(field string) *QueryBuilder[T] {
+	q.values = append(q.values, bson.M{field: bson.M{operator.Exists: true}})
+	return q
+}
+
+// NotExists adds an exists clause to the query to check if a field does not exist.
+// NOTE: field should be a valid BSON field.
+//
+// Example:
+//
+//	NotExists("name")
+func (q *QueryBuilder[T]) NotExists(field string) *QueryBuilder[T] {
+	q.values = append(q.values, bson.M{field: bson.M{operator.Exists: false}})
+	return q
+}
+
+// Or adds an or clause to the query. This is used when the or clause compares different fields. If you need to
+// compare the same field, use the In or NotIn functions.
+// NOTE: f should be a function that accepts a querybuilder.
+//
+// Example:
+//
+//	Or(func(q *QueryBuilder[T]) {
+//		return q.Where("field1", "value").Where("field2", "value2")
+//	})
+func (q *QueryBuilder[T]) Or(f func(q *QueryBuilder[T])) *QueryBuilder[T] {
+	ss := &Store[T]{
+		Client:     q.store.Client,
+		Database:   q.store.Database,
+		Collection: q.store.Collection,
+	}
+	qq := ss.Query()
+	f(qq)
+	q.values = append(q.values, bson.M{operator.Or: qq.values})
+	return q
+}
+
+// ComplexOr adds an or clause to the query using two separate query builders. This is used
+// when the or clause requires two queries that are structurally different.
+// NOTE: f should be a function that accepts two query builders.
+//
+// Example:
+//
+//	ComplexOr(func(qq *QueryBuilder[T], qr *QueryBuilder[T])) *QueryBuilder[T] {
+//		qq.Where("name", "value")
+//		qr.Where("type", "value2")
+//	})
+func (q *QueryBuilder[T]) ComplexOr(f func(qq *QueryBuilder[T], qr *QueryBuilder[T])) *QueryBuilder[T] {
+	ss := &Store[T]{
+		Client:     q.store.Client,
+		Database:   q.store.Database,
+		Collection: q.store.Collection,
+	}
+	qq := ss.Query()
+	qr := ss.Query()
+	f(qq, qr)
+	q.values = append(q.values, bson.M{operator.Or: bson.A{bson.M{operator.And: qq.values}, bson.M{operator.And: qr.values}}})
+	return q
+}
+
+// If adds a field and value to the query if the condition is true.
+// NOTE: field should be a valid BSON field.
+//
+// Example:
+//
+//	If(true, "name", "value")
+func (q *QueryBuilder[T]) If(cond bool, field string, value interface{}) *QueryBuilder[T] {
+	if cond {
+		q.values = append(q.values, bson.M{field: value})
+	}
 	return q
 }

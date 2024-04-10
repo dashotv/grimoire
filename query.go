@@ -104,6 +104,8 @@ func (q *QueryBuilder[T]) Batch(size int64, f func(results []T) error) error {
 		return err
 	}
 	if total <= size {
+		q.Skip(0)
+		q.Limit(int(size))
 		list, err := q.Run()
 		if err != nil {
 			return err

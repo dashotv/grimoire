@@ -34,7 +34,8 @@ func Indexes[T mgm.Model](s *Store[T], o T) {
 						dir = -1
 					}
 				}
-				s.Collection.Indexes().CreateOne(mgm.Ctx(), mongo.IndexModel{Keys: bson.M{field.Name: dir}})
+				name := strings.ToLower(field.Name)
+				s.Collection.Indexes().CreateOne(mgm.Ctx(), mongo.IndexModel{Keys: bson.M{name: dir}})
 			}
 		}
 	}

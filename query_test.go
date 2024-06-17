@@ -15,9 +15,11 @@ const TOTAL_SERIES = 1533
 var createdId primitive.ObjectID
 
 type Fake struct {
-	Document `bson:",inline"` // include mgm.DefaultModel
-	Name     string           `json:"name" bson:"name" grimoire:"index"`
-	Age      int              `json:"age" bson:"age" grimoire:"index,desc"`
+	Document  `bson:",inline"` // include mgm.DefaultModel
+	CreatedAt time.Time        `json:"created_at" bson:"created_at" grimoire:"index"`
+	UpdatedAt time.Time        `json:"updated_at" bson:"updated_at" grimoire:"index"`
+	Name      string           `json:"name" bson:"name" grimoire:"index"`
+	Age       int              `json:"age" bson:"age" grimoire:"index,desc"`
 }
 
 type Download struct {

@@ -34,7 +34,13 @@ func Indexes[T mgm.Model](s *Store[T], o T) {
 						dir = -1
 					}
 				}
-				name := strings.ToLower(field.Name)
+				name := strings.ToLower(field.Name) // default to field name
+				if v, ok := field.Tag.Lookup("bson"); ok {
+					vals := strings.Split(v, ",")
+					if len(vals) > 0 {
+						name = vals[0] // use bson tag if available
+					}
+				}
 				s.Collection.Indexes().CreateOne(mgm.Ctx(), mongo.IndexModel{Keys: bson.M{name: dir}})
 			}
 		}

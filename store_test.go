@@ -202,5 +202,6 @@ func TestStore_Index(t *testing.T) {
 	err = s.Save(f)
 	assert.NoError(t, err)
 
-	Indexes(s, &Fake{})
+	CreateIndexes(s, &Fake{}, "created_at;name:1,age:-1")
+	CreateIndexesFromTags(s, &Fake{})
 }

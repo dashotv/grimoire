@@ -17,7 +17,39 @@ type Store[T mgm.Model] struct {
 	queryDefaults []bson.M
 }
 
+// CreateIndexes creates indexes on the collection
+// descriptor is a string of index specs separated by semicolons
+// each spec is a comma separated list of fields, with an optional direction
+func CreateIndexes[T mgm.Model](s *Store[T], o T, descriptor string) {
+	if descriptor == "" {
+		return
+	}
+
+	specs := strings.Split(descriptor, ";")
+	for _, spec := range specs {
+		d := bson.D{}
+		fields := strings.Split(spec, ",")
+		for _, field := range fields {
+			parts := strings.Split(field, ":")
+			dir := 1
+			if len(parts) > 1 {
+				if parts[1] == "desc" || parts[1] == "-1" {
+					dir = -1
+				}
+			}
+			d = append(d, bson.E{Key: parts[0], Value: dir})
+		}
+		s.Collection.Indexes().CreateOne(mgm.Ctx(), mongo.IndexModel{Keys: d})
+	}
+}
+
+// Indexes creates indexes on the collection based on struct tags
+// deprecated: use CreateIndexesFromTags
 func Indexes[T mgm.Model](s *Store[T], o T) {
+	CreateIndexesFromTags(s, o)
+}
+
+func CreateIndexesFromTags[T mgm.Model](s *Store[T], o T) {
 	t := reflect.TypeOf(o)
 	if t.Kind() == reflect.Ptr {
 		t = t.Elem()

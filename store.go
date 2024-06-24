@@ -49,6 +49,7 @@ func Indexes[T mgm.Model](s *Store[T], o T) {
 	CreateIndexesFromTags(s, o)
 }
 
+// Indexes creates indexes on the collection based on struct tags
 func CreateIndexesFromTags[T mgm.Model](s *Store[T], o T) {
 	t := reflect.TypeOf(o)
 	if t.Kind() == reflect.Ptr {
@@ -79,6 +80,7 @@ func CreateIndexesFromTags[T mgm.Model](s *Store[T], o T) {
 	}
 }
 
+// New creates a new store object
 func New[T mgm.Model](URI, database, collection string) (*Store[T], error) {
 	c, err := newClient(URI)
 	if err != nil {
@@ -97,6 +99,7 @@ func New[T mgm.Model](URI, database, collection string) (*Store[T], error) {
 	return s, nil
 }
 
+// SetQueryDefaults sets defaults used for all queries
 func (s *Store[T]) SetQueryDefaults(values []bson.M) {
 	s.queryDefaults = append(s.queryDefaults, values...)
 }

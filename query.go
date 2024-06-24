@@ -131,14 +131,15 @@ func (q *QueryBuilder[T]) Batch(size int64, f func(results []T) error) error {
 }
 
 // Batch executes the query in batches of 'batchSize' and yields one object at a time
-func (q *QueryBuilder[T]) Each(batchSize int64, f func(result T)) error {
-	err := q.Batch(batchSize, func(results []T) error {
+func (q *QueryBuilder[T]) Each(batchSize int64, f func(result T) error) error {
+	return q.Batch(batchSize, func(results []T) error {
 		for _, result := range results {
-			f(result)
+			if err := f(result); err != nil {
+				return err
+			}
 		}
 		return nil
 	})
-	return err
 }
 
 // Raw executes the raw bson.M query and returns a list of objects.

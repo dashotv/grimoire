@@ -92,7 +92,7 @@ func (q *QueryBuilder[T]) Run() ([]T, error) {
 	return result, nil
 }
 
-// Run executes the query and returns a list of objects.
+// Batch executes the query and yields 'size' objects at a time.
 func (q *QueryBuilder[T]) Batch(size int64, f func(results []T) error) error {
 	filter := bson.M{}
 	if len(q.values) > 0 {
@@ -128,6 +128,17 @@ func (q *QueryBuilder[T]) Batch(size int64, f func(results []T) error) error {
 	}
 
 	return nil
+}
+
+// Batch executes the query in batches of 'batchSize' and yields one object at a time
+func (q *QueryBuilder[T]) Each(batchSize int64, f func(result T)) error {
+	err := q.Batch(batchSize, func(results []T) error {
+		for _, result := range results {
+			f(result)
+		}
+		return nil
+	})
+	return err
 }
 
 // Raw executes the raw bson.M query and returns a list of objects.

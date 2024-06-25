@@ -21,62 +21,6 @@ func (q *QueryBuilder[T]) String() string {
 	return fmt.Sprintf("QueryBuilder[T] %#v", q.values)
 }
 
-func (q *QueryBuilder[T]) addSort(field string, value int) *QueryBuilder[T] {
-	q.sort = append(q.sort, bson.E{Key: field, Value: value})
-	return q
-}
-
-// Asc adds an ascending sort to the query.
-// NOTE: field should be a valid BSON field.
-//
-// Examples:
-//
-//	Asc("name")
-//	Asc("name").Asc("age")
-func (q *QueryBuilder[T]) Asc(field string) *QueryBuilder[T] {
-	return q.addSort(field, 1)
-}
-
-// Desc adds a descending sort to the query.
-// NOTE: field should be a valid BSON field.
-//
-// Examples:
-//
-//	Desc("name")
-//	Desc("name").Desc("age")
-func (q *QueryBuilder[T]) Desc(field string) *QueryBuilder[T] {
-	return q.addSort(field, -1)
-}
-
-// Limit sets the limit of the query.
-//
-// Examples:
-//
-//	Limit(10)
-func (q *QueryBuilder[T]) Limit(limit int) *QueryBuilder[T] {
-	q.limit = int64(limit)
-	return q
-}
-
-// Skip sets the how many objects to skip of the query.
-// Examples:
-//
-//	Skip(10)
-func (q *QueryBuilder[T]) Skip(skip int) *QueryBuilder[T] {
-	q.skip = int64(skip)
-	return q
-}
-
-func (q *QueryBuilder[T]) options() *options.FindOptions {
-	o := &options.FindOptions{}
-	if q.limit > 0 {
-		o.SetLimit(q.limit)
-	}
-	o.SetSkip(q.skip)
-	o.SetSort(q.sort)
-	return o
-}
-
 // Run executes the query and returns a list of objects.
 func (q *QueryBuilder[T]) Run() ([]T, error) {
 	result := make([]T, 0)
@@ -142,6 +86,19 @@ func (q *QueryBuilder[T]) Each(batchSize int64, f func(result T) error) error {
 	})
 }
 
+// First executes the query and returns the first object.
+func (q *QueryBuilder[T]) First() (T, error) {
+	var zero T
+	list, err := q.Limit(1).Run()
+	if err != nil {
+		return zero, err
+	}
+	if len(list) == 0 {
+		return zero, fmt.Errorf("no results found")
+	}
+	return list[0], nil
+}
+
 // Raw executes the raw bson.M query and returns a list of objects.
 // NOTE: This does not use the query builder values.
 func (q *QueryBuilder[T]) Raw(query bson.M) ([]T, error) {
@@ -174,6 +131,62 @@ func (q *QueryBuilder[T]) DeleteMany() (int64, error) {
 		return 0, err
 	}
 	return n.DeletedCount, nil
+}
+
+func (q *QueryBuilder[T]) addSort(field string, value int) *QueryBuilder[T] {
+	q.sort = append(q.sort, bson.E{Key: field, Value: value})
+	return q
+}
+
+// Asc adds an ascending sort to the query.
+// NOTE: field should be a valid BSON field.
+//
+// Examples:
+//
+//	Asc("name")
+//	Asc("name").Asc("age")
+func (q *QueryBuilder[T]) Asc(field string) *QueryBuilder[T] {
+	return q.addSort(field, 1)
+}
+
+// Desc adds a descending sort to the query.
+// NOTE: field should be a valid BSON field.
+//
+// Examples:
+//
+//	Desc("name")
+//	Desc("name").Desc("age")
+func (q *QueryBuilder[T]) Desc(field string) *QueryBuilder[T] {
+	return q.addSort(field, -1)
+}
+
+// Limit sets the limit of the query.
+//
+// Examples:
+//
+//	Limit(10)
+func (q *QueryBuilder[T]) Limit(limit int) *QueryBuilder[T] {
+	q.limit = int64(limit)
+	return q
+}
+
+// Skip sets the how many objects to skip of the query.
+// Examples:
+//
+//	Skip(10)
+func (q *QueryBuilder[T]) Skip(skip int) *QueryBuilder[T] {
+	q.skip = int64(skip)
+	return q
+}
+
+func (q *QueryBuilder[T]) options() *options.FindOptions {
+	o := &options.FindOptions{}
+	if q.limit > 0 {
+		o.SetLimit(q.limit)
+	}
+	o.SetSkip(q.skip)
+	o.SetSort(q.sort)
+	return o
 }
 
 // Where adds a where clause to the query.

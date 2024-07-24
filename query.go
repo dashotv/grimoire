@@ -1,6 +1,7 @@
 package grimoire
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/kamva/mgm/v3"
@@ -113,11 +114,16 @@ func (q *QueryBuilder[T]) Raw(query bson.M) ([]T, error) {
 
 // Count executes the query and returns the number of objects.
 func (q *QueryBuilder[T]) Count() (int64, error) {
+	return q.CountWithContext(mgm.Ctx())
+}
+
+// CountWithContext executes the query and returns the number of objects.
+func (q *QueryBuilder[T]) CountWithContext(ctx context.Context) (int64, error) {
 	filter := bson.M{}
 	if len(q.values) > 0 {
 		filter["$and"] = q.values
 	}
-	return q.store.Collection.CountDocuments(mgm.Ctx(), filter)
+	return q.store.Collection.CountDocuments(ctx, filter)
 }
 
 // DeleteMany executes the query and deletes the objects.

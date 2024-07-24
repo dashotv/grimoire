@@ -74,5 +74,5 @@ func CustomClientOptions(URI string) *options.ClientOptions {
 		rb.RegisterDecoder(t, &nullawareDecoder{defDecoder, reflect.Zero(t)})
 	}
 
-	return options.Client().ApplyURI(URI).SetRegistry(rb.Build())
+	return options.Client().ApplyURI(URI).SetTimeout(120 * time.Second).SetRegistry(rb.Build())
 }

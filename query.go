@@ -3,6 +3,7 @@ package grimoire
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/kamva/mgm/v3"
 	"github.com/kamva/mgm/v3/operator"
@@ -44,7 +45,10 @@ func (q *QueryBuilder[T]) Batch(size int64, f func(results []T) error) error {
 		filter["$and"] = q.values
 	}
 
-	total, err := q.Count()
+	ctx, timeout := context.WithTimeout(context.Background(), 120*time.Second)
+	defer timeout()
+
+	total, err := q.CountWithContext(ctx)
 	if err != nil {
 		return err
 	}

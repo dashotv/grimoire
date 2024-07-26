@@ -31,13 +31,13 @@ func CreateIndexes[T mgm.Model](s *Store[T], o T, descriptor string) {
 		fields := strings.Split(spec, ",")
 		for _, field := range fields {
 			parts := strings.Split(field, ":")
-			dir := 1
 			if len(parts) > 1 {
 				if parts[1] == "desc" || parts[1] == "-1" {
-					dir = -1
+					d = append(d, bson.E{Key: parts[0], Value: -1})
+				} else if parts[1] == "text" {
+					d = append(d, bson.E{Key: parts[0], Value: "text"})
 				}
 			}
-			d = append(d, bson.E{Key: parts[0], Value: dir})
 		}
 		s.Collection.Indexes().CreateOne(mgm.Ctx(), mongo.IndexModel{Keys: d})
 	}

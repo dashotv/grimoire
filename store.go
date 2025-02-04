@@ -52,7 +52,7 @@ func NewWithClient[T Model](c *mongo.Client, database, collection string) (*Stor
 // CreateIndexes creates indexes on the collection
 // descriptor is a string of index specs separated by semicolons
 // each spec is a comma separated list of fields, with an optional direction
-func CreateIndexes[T Model](s *Store[T], o T, descriptor string) {
+func CreateIndexes[T Model](s *Store[T], descriptor string) {
 	if descriptor == "" {
 		return
 	}
@@ -78,12 +78,12 @@ func CreateIndexes[T Model](s *Store[T], o T, descriptor string) {
 
 // Indexes creates indexes on the collection based on struct tags
 // deprecated: use CreateIndexesFromTags
-func Indexes[T Model](s *Store[T], o T) {
+func Indexes[T Model](s *Store[T], o *T) {
 	CreateIndexesFromTags(s, o)
 }
 
 // Indexes creates indexes on the collection based on struct tags
-func CreateIndexesFromTags[T Model](s *Store[T], o T) {
+func CreateIndexesFromTags[T Model](s *Store[T], o *T) {
 	t := reflect.TypeOf(o)
 	if t.Kind() == reflect.Ptr {
 		t = t.Elem()

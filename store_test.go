@@ -7,11 +7,41 @@ import (
 
 	"github.com/kr/pretty"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
 func TestStore_Create(t *testing.T) {
 	s, err := New[Download]("mongodb://localhost:27017", "seer_test", "downloads")
+	assert.NoError(t, err)
+	assert.NotNil(t, s)
+
+	o := &Download{
+		MediumId:  bson.NewObjectID(),
+		Auto:      true,
+		Multi:     false,
+		Force:     false,
+		Url:       "https://example.com",
+		ReleaseId: "1234567890",
+		Thash:     "1234567890",
+	}
+
+	err = s.Save(o)
+	assert.NoError(t, err, "save")
+	assert.NotNil(t, o.GetID(), "id")
+
+	createdId = o.GetID()
+	fmt.Printf("created: %s\n", createdId)
+}
+
+func TestStore_CreateWithClient(t *testing.T) {
+	c, err := mongo.Connect(options.Client().ApplyURI("mongodb://localhost:27017"))
+	require.NoError(t, err)
+	require.NotNil(t, c)
+
+	s, err := NewWithClient[Download](c, "seer_test", "downloads")
 	assert.NoError(t, err)
 	assert.NotNil(t, s)
 
@@ -229,7 +259,7 @@ func TestStore_Index(t *testing.T) {
 	err = s.Save(f)
 	assert.NoError(t, err)
 
-	CreateIndexes(s, Fake{}, "created_at:1")
-	CreateIndexes(s, Fake{}, "name:text")
+	CreateIndexes(s, "created_at")
+	CreateIndexes(s, "name:text")
 	CreateIndexesFromTags(s, Fake{})
 }

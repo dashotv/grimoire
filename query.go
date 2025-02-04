@@ -5,46 +5,47 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/kamva/mgm/v3"
-	"github.com/kamva/mgm/v3/operator"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"github.com/chenmingyong0423/go-mongox/v2/builder/query"
+	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
-type QueryBuilder[T mgm.Model] struct {
-	store  *Store[T]
-	values []bson.M
-	limit  int64
-	skip   int64
-	sort   bson.D
+type QueryBuilder[T Model] struct {
+	store *Store[T]
+	query *query.Builder
+	limit int64
+	skip  int64
+	sort  bson.D
 }
 
 func (q *QueryBuilder[T]) String() string {
-	return fmt.Sprintf("QueryBuilder[T] %#v", q.values)
+	return fmt.Sprintf("QueryBuilder[T] %#v", q.Build())
 }
 
 // Run executes the query and returns a list of objects.
-func (q *QueryBuilder[T]) Run() ([]T, error) {
-	result := make([]T, 0)
-	filter := bson.M{}
-	if len(q.values) > 0 {
-		filter["$and"] = q.values
-	}
-	err := q.store.Collection.SimpleFind(&result, filter, q.options())
-	if err != nil {
-		return nil, err
-	}
+func (q *QueryBuilder[T]) Run() ([]*T, error) {
+	return q.find()
+}
 
-	return result, nil
+func (q *QueryBuilder[T]) find() ([]*T, error) {
+	return q.findWithContext(context.Background())
+}
+
+func (q *QueryBuilder[T]) findWithContext(ctx context.Context) ([]*T, error) {
+	f := q.store.Collection.Finder().Filter(q.query.Build())
+	if q.limit > 0 {
+		f.Limit(q.limit)
+	}
+	if q.skip > 0 {
+		f.Skip(q.skip)
+	}
+	if len(q.sort) > 0 {
+		f.Sort(q.sort)
+	}
+	return f.Find(ctx)
 }
 
 // Batch executes the query and yields 'size' objects at a time.
-func (q *QueryBuilder[T]) Batch(size int64, f func(results []T) error) error {
-	filter := bson.M{}
-	if len(q.values) > 0 {
-		filter["$and"] = q.values
-	}
-
+func (q *QueryBuilder[T]) Batch(size int64, f func(results []*T) error) error {
 	ctx, timeout := context.WithTimeout(context.Background(), 120*time.Second)
 	defer timeout()
 
@@ -63,14 +64,13 @@ func (q *QueryBuilder[T]) Batch(size int64, f func(results []T) error) error {
 	}
 
 	for i := int64(0); i < total; i += size {
-		result := make([]T, 0)
 		q.Skip(int(i))
 		q.Limit(int(size))
-		err := q.store.Collection.SimpleFind(&result, filter, q.options())
+		list, err := q.find()
 		if err != nil {
 			return err
 		}
-		err = f(result)
+		err = f(list)
 		if err != nil {
 			return err
 		}
@@ -80,8 +80,8 @@ func (q *QueryBuilder[T]) Batch(size int64, f func(results []T) error) error {
 }
 
 // Batch executes the query in batches of 'batchSize' and yields one object at a time
-func (q *QueryBuilder[T]) Each(batchSize int64, f func(result T) error) error {
-	return q.Batch(batchSize, func(results []T) error {
+func (q *QueryBuilder[T]) Each(batchSize int64, f func(result *T) error) error {
+	return q.Batch(batchSize, func(results []*T) error {
 		for _, result := range results {
 			if err := f(result); err != nil {
 				return err
@@ -92,51 +92,41 @@ func (q *QueryBuilder[T]) Each(batchSize int64, f func(result T) error) error {
 }
 
 // First executes the query and returns the first object.
-func (q *QueryBuilder[T]) First() (T, error) {
-	var zero T
+func (q *QueryBuilder[T]) First() (*T, error) {
 	list, err := q.Limit(1).Run()
 	if err != nil {
-		return zero, err
+		return nil, err
 	}
 	if len(list) == 0 {
-		return zero, fmt.Errorf("no results found")
+		return nil, fmt.Errorf("no results found")
 	}
 	return list[0], nil
 }
 
+// Build returns the result of the underlying mongox query builder
+func (q *QueryBuilder[T]) Build() bson.D {
+	return q.query.Build()
+}
+
 // Raw executes the raw bson.M query and returns a list of objects.
 // NOTE: This does not use the query builder values.
-func (q *QueryBuilder[T]) Raw(query bson.M) ([]T, error) {
-	result := make([]T, 0)
-	err := q.store.Collection.SimpleFind(&result, query, q.options())
-	if err != nil {
-		return nil, err
-	}
-
-	return result, nil
+func (q *QueryBuilder[T]) Raw(query bson.M) ([]*T, error) {
+	return q.store.Collection.Finder().Filter(query).Find(context.Background())
 }
 
 // Count executes the query and returns the number of objects.
 func (q *QueryBuilder[T]) Count() (int64, error) {
-	return q.CountWithContext(mgm.Ctx())
+	return q.CountWithContext(context.Background())
 }
 
 // CountWithContext executes the query and returns the number of objects.
 func (q *QueryBuilder[T]) CountWithContext(ctx context.Context) (int64, error) {
-	filter := bson.M{}
-	if len(q.values) > 0 {
-		filter["$and"] = q.values
-	}
-	return q.store.Collection.CountDocuments(ctx, filter)
+	return q.store.Collection.Finder().Filter(q.query.Build()).Count(ctx)
 }
 
 // DeleteMany executes the query and deletes the objects.
 func (q *QueryBuilder[T]) DeleteMany() (int64, error) {
-	filter := bson.M{}
-	if len(q.values) > 0 {
-		filter["$and"] = q.values
-	}
-	n, err := q.store.Collection.DeleteMany(mgm.Ctx(), filter)
+	n, err := q.store.Collection.Deleter().Filter(q.query.Build()).DeleteMany(context.Background())
 	if err != nil {
 		return 0, err
 	}
@@ -189,15 +179,15 @@ func (q *QueryBuilder[T]) Skip(skip int) *QueryBuilder[T] {
 	return q
 }
 
-func (q *QueryBuilder[T]) options() *options.FindOptions {
-	o := &options.FindOptions{}
-	if q.limit > 0 {
-		o.SetLimit(q.limit)
-	}
-	o.SetSkip(q.skip)
-	o.SetSort(q.sort)
-	return o
-}
+// func (q *QueryBuilder[T]) options() *options.FindOptions {
+// 	o := &options.FindOptions{}
+// 	if q.limit > 0 {
+// 		o.SetLimit(q.limit)
+// 	}
+// 	o.SetSkip(q.skip)
+// 	o.SetSort(q.sort)
+// 	return o
+// }
 
 // Where adds a where clause to the query.
 // NOTE: field should be a valid BSON field.
@@ -206,7 +196,7 @@ func (q *QueryBuilder[T]) options() *options.FindOptions {
 //
 //	Where("name", "value")
 func (q *QueryBuilder[T]) Where(field string, value interface{}) *QueryBuilder[T] {
-	q.values = append(q.values, bson.M{field: bson.M{operator.Eq: value}})
+	q.query.Eq(field, value)
 	return q
 }
 
@@ -216,8 +206,8 @@ func (q *QueryBuilder[T]) Where(field string, value interface{}) *QueryBuilder[T
 // Example:
 //
 //	In("name", []string{"foo", "bar"})
-func (q *QueryBuilder[T]) In(field string, value interface{}) *QueryBuilder[T] {
-	q.values = append(q.values, bson.M{field: bson.M{operator.In: value}})
+func (q *QueryBuilder[T]) In(field string, value ...interface{}) *QueryBuilder[T] {
+	q.query.In(field, value...)
 	return q
 }
 
@@ -228,7 +218,7 @@ func (q *QueryBuilder[T]) In(field string, value interface{}) *QueryBuilder[T] {
 //
 //	NotIn("name", []string{"foo", "bar"})
 func (q *QueryBuilder[T]) NotIn(field string, value interface{}) *QueryBuilder[T] {
-	q.values = append(q.values, bson.M{field: bson.M{operator.Nin: value}})
+	q.query.Nin(field, value)
 	return q
 }
 
@@ -239,7 +229,7 @@ func (q *QueryBuilder[T]) NotIn(field string, value interface{}) *QueryBuilder[T
 //
 //	NotEqual("name", "value")
 func (q *QueryBuilder[T]) NotEqual(field string, value interface{}) *QueryBuilder[T] {
-	q.values = append(q.values, bson.M{field: bson.M{operator.Ne: value}})
+	q.query.Ne(field, value)
 	return q
 }
 
@@ -250,7 +240,7 @@ func (q *QueryBuilder[T]) NotEqual(field string, value interface{}) *QueryBuilde
 //
 //	LessThan("name", 10)
 func (q *QueryBuilder[T]) LessThan(field string, value interface{}) *QueryBuilder[T] {
-	q.values = append(q.values, bson.M{field: bson.M{operator.Lt: value}})
+	q.query.Lt(field, value)
 	return q
 }
 
@@ -261,7 +251,7 @@ func (q *QueryBuilder[T]) LessThan(field string, value interface{}) *QueryBuilde
 //
 //	LessThanEqual("name", 10)
 func (q *QueryBuilder[T]) LessThanEqual(field string, value interface{}) *QueryBuilder[T] {
-	q.values = append(q.values, bson.M{field: bson.M{operator.Lte: value}})
+	q.query.Lte(field, value)
 	return q
 }
 
@@ -272,7 +262,7 @@ func (q *QueryBuilder[T]) LessThanEqual(field string, value interface{}) *QueryB
 //
 //	GreaterThan("name", 10)
 func (q *QueryBuilder[T]) GreaterThan(field string, value interface{}) *QueryBuilder[T] {
-	q.values = append(q.values, bson.M{field: bson.M{operator.Gt: value}})
+	q.query.Gt(field, value)
 	return q
 }
 
@@ -283,7 +273,7 @@ func (q *QueryBuilder[T]) GreaterThan(field string, value interface{}) *QueryBui
 //
 //	GreaterThanEqual("name", 10)
 func (q *QueryBuilder[T]) GreaterThanEqual(field string, value interface{}) *QueryBuilder[T] {
-	q.values = append(q.values, bson.M{field: bson.M{operator.Gte: value}})
+	q.query.Gte(field, value)
 	return q
 }
 
@@ -294,7 +284,7 @@ func (q *QueryBuilder[T]) GreaterThanEqual(field string, value interface{}) *Que
 //
 //	Exists("name")
 func (q *QueryBuilder[T]) Exists(field string) *QueryBuilder[T] {
-	q.values = append(q.values, bson.M{field: bson.M{operator.Exists: true}})
+	q.query.Exists(field, true)
 	return q
 }
 
@@ -305,51 +295,30 @@ func (q *QueryBuilder[T]) Exists(field string) *QueryBuilder[T] {
 //
 //	NotExists("name")
 func (q *QueryBuilder[T]) NotExists(field string) *QueryBuilder[T] {
-	q.values = append(q.values, bson.M{field: bson.M{operator.Exists: false}})
+	q.query.Exists(field, false)
 	return q
 }
 
 // Or adds an or clause to the query. This is used when the or clause compares different fields. If you need to
 // compare the same field, use the In or NotIn functions.
-// NOTE: f should be a function that accepts a querybuilder.
 //
 // Example:
 //
-//	Or(func(q *QueryBuilder[T]) {
-//		return q.Where("field1", "value").Where("field2", "value2")
-//	})
-func (q *QueryBuilder[T]) Or(f func(q *QueryBuilder[T])) *QueryBuilder[T] {
-	ss := &Store[T]{
-		Client:     q.store.Client,
-		Database:   q.store.Database,
-		Collection: q.store.Collection,
-	}
-	qq := ss.Query()
-	f(qq)
-	q.values = append(q.values, bson.M{operator.Or: qq.values})
-	return q
-}
-
-// ComplexOr adds an or clause to the query using two separate query builders. This is used
-// when the or clause requires two queries that are structurally different.
-// NOTE: f should be a function that accepts two query builders.
+// Or(
 //
-// Example:
+//	query.Eq("title", "The Incredibles"),
+//	query.Eq("_type", "Series"),
 //
-//	ComplexOr(func(qq *QueryBuilder[T], qr *QueryBuilder[T])) *QueryBuilder[T] {
-//		qq.Where("name", "value")
-//		qr.Where("type", "value2")
-//	})
-func (q *QueryBuilder[T]) ComplexOr(f func(qq *QueryBuilder[T], qr *QueryBuilder[T])) *QueryBuilder[T] {
-	ss := &Store[T]{
-		Client:     q.store.Client,
-		Database:   q.store.Database,
-		Collection: q.store.Collection,
-	}
-	qq := ss.Query()
-	qr := ss.Query()
-	f(qq, qr)
-	q.values = append(q.values, bson.M{operator.Or: bson.A{bson.M{operator.And: qq.values}, bson.M{operator.And: qr.values}}})
+// )
+//
+// Or(
+//
+//	q.Where("_type", "Movie").Where("kind", "movies3d").Where("title", "Up").Build(),
+//	q.Where("_type", "Series").Where("kind", "donghua").Where("title", "The Great Ruler").Build(),
+//
+// )
+func (q *QueryBuilder[T]) Or(conditions ...any) *QueryBuilder[T] {
+	q.query.Or(conditions...)
 	return q
 }
 
@@ -361,7 +330,7 @@ func (q *QueryBuilder[T]) ComplexOr(f func(qq *QueryBuilder[T], qr *QueryBuilder
 //	If(true, "name", "value")
 func (q *QueryBuilder[T]) If(cond bool, field string, value interface{}) *QueryBuilder[T] {
 	if cond {
-		q.values = append(q.values, bson.M{field: value})
+		q.query.Eq(field, value)
 	}
 	return q
 }

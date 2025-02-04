@@ -1,26 +1,58 @@
 package grimoire
 
 import (
+	"context"
 	"reflect"
 	"strings"
 
-	"github.com/kamva/mgm/v3"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
+	"github.com/chenmingyong0423/go-mongox/v2"
+	"github.com/chenmingyong0423/go-mongox/v2/builder/query"
+	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
-type Store[T mgm.Model] struct {
-	Client        *mongo.Client
-	Database      *mongo.Database
-	Collection    *mgm.Collection
+type Store[T Model] struct {
+	Client        *mongox.Client
+	Database      *mongox.Database
+	Collection    *mongox.Collection[T]
 	queryDefaults []bson.M
+}
+
+// New creates a new store object
+func New[T Model](URI, database, collection string) (*Store[T], error) {
+	c, err := mongo.Connect(options.Client().ApplyURI(URI))
+	if err != nil {
+		return nil, err
+	}
+
+	return NewWithClient[T](c, database, collection)
+}
+
+// New creates a new store object using an existing mongo client
+func NewWithClient[T Model](c *mongo.Client, database, collection string) (*Store[T], error) {
+	// ensure we're connected
+	if err := c.Ping(context.Background(), nil); err != nil {
+		return nil, err
+	}
+
+	client := mongox.NewClient(c, &mongox.Config{})
+	db := client.NewDatabase(database)
+	col := mongox.NewCollection[T](db, collection)
+
+	s := &Store[T]{
+		Client:        client,
+		Database:      db,
+		Collection:    col,
+		queryDefaults: []bson.M{},
+	}
+	return s, nil
 }
 
 // CreateIndexes creates indexes on the collection
 // descriptor is a string of index specs separated by semicolons
 // each spec is a comma separated list of fields, with an optional direction
-func CreateIndexes[T mgm.Model](s *Store[T], o T, descriptor string) {
+func CreateIndexes[T Model](s *Store[T], o T, descriptor string) {
 	if descriptor == "" {
 		return
 	}
@@ -39,18 +71,19 @@ func CreateIndexes[T mgm.Model](s *Store[T], o T, descriptor string) {
 				}
 			}
 		}
-		s.Collection.Indexes().CreateOne(mgm.Ctx(), mongo.IndexModel{Keys: d})
+		// s.Collection.Indexes().CreateOne(context.Background(), mongo.IndexModel{Keys: d})
+		s.Collection.Collection().Indexes().CreateMany(context.Background(), []mongo.IndexModel{{Keys: d}})
 	}
 }
 
 // Indexes creates indexes on the collection based on struct tags
 // deprecated: use CreateIndexesFromTags
-func Indexes[T mgm.Model](s *Store[T], o T) {
+func Indexes[T Model](s *Store[T], o T) {
 	CreateIndexesFromTags(s, o)
 }
 
 // Indexes creates indexes on the collection based on struct tags
-func CreateIndexesFromTags[T mgm.Model](s *Store[T], o T) {
+func CreateIndexesFromTags[T Model](s *Store[T], o T) {
 	t := reflect.TypeOf(o)
 	if t.Kind() == reflect.Ptr {
 		t = t.Elem()
@@ -74,29 +107,10 @@ func CreateIndexesFromTags[T mgm.Model](s *Store[T], o T) {
 						name = vals[0] // use bson tag if available
 					}
 				}
-				s.Collection.Indexes().CreateOne(mgm.Ctx(), mongo.IndexModel{Keys: bson.M{name: dir}})
+				s.Collection.Collection().Indexes().CreateMany(context.Background(), []mongo.IndexModel{{Keys: bson.D{{Key: name, Value: dir}}}})
 			}
 		}
 	}
-}
-
-// New creates a new store object
-func New[T mgm.Model](URI, database, collection string) (*Store[T], error) {
-	c, err := newClient(URI)
-	if err != nil {
-		return nil, err
-	}
-
-	db := c.Database(database)
-	col := mgm.NewCollection(db, collection)
-
-	s := &Store[T]{
-		Client:        c,
-		Database:      db,
-		Collection:    col,
-		queryDefaults: []bson.M{},
-	}
-	return s, nil
 }
 
 // SetQueryDefaults sets defaults used for all queries
@@ -104,83 +118,68 @@ func (s *Store[T]) SetQueryDefaults(values []bson.M) {
 	s.queryDefaults = append(s.queryDefaults, values...)
 }
 
-func (s *Store[T]) GetByID(id primitive.ObjectID, out T) (T, error) {
-	err := s.Collection.FindByID(id, out)
-	return out, err
+func (s *Store[T]) GetByID(id bson.ObjectID) (*T, error) {
+	return s.Collection.Finder().Filter(query.Id(id)).FindOne(context.Background())
 }
 
-func (s *Store[T]) Get(id string, out T) (T, error) {
-	oid, err := idFromHex(id)
+func (s *Store[T]) Get(id string) (*T, error) {
+	oid, err := bson.ObjectIDFromHex(id)
 	if err != nil {
-		return out, err
+		return nil, err
 	}
-	return s.GetByID(oid, out)
+	return s.Collection.Finder().Filter(query.Id(oid)).FindOne(context.Background())
 }
 
-func (s *Store[T]) FindByID(id primitive.ObjectID, out T) error {
-	err := s.Collection.FindByID(id, out)
+func (s *Store[T]) FindByID(id bson.ObjectID) (*T, error) {
+	return s.Collection.Finder().Filter(query.Id(id)).FindOne(context.Background())
+}
+
+func (s *Store[T]) Find(id string) (*T, error) {
+	oid, err := bson.ObjectIDFromHex(id)
 	if err != nil {
+		return nil, err
+	}
+	return s.FindByID(oid)
+}
+
+func (s *Store[T]) Save(o *T) error {
+	if (*o).GetID().IsZero() {
+		_, err := s.Collection.Creator().InsertOne(context.Background(), o)
 		return err
 	}
-
-	return nil
+	return s.Update(o)
 }
 
-func (s *Store[T]) Find(id string, out T) error {
-	oid, err := idFromHex(id)
-	if err != nil {
-		return err
-	}
-	return s.FindByID(oid, out)
+func (s *Store[T]) Update(o *T) error {
+	_, err := s.Collection.Updater().Filter(query.Id((*o).GetID())).Updates(bson.M{"$set": (*o)}).UpdateOne(context.Background())
+	return err
 }
 
-func idFromHex(id string) (primitive.ObjectID, error) {
-	oid, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		return primitive.ObjectID{}, err
-	}
-	return oid, nil
-}
-
-func (s *Store[T]) Save(o T) error {
-	if o.GetID().(primitive.ObjectID).IsZero() {
-		return s.Collection.Create(o)
-	}
-	return s.Collection.Update(o)
-}
-
-func (s *Store[T]) CreateWithTransaction(o T) error {
-	return mgm.TransactionWithClient(mgm.Ctx(), s.Client, func(session mongo.Session, ctx mongo.SessionContext) error {
-		err := s.Collection.CreateWithCtx(ctx, o)
-		if err != nil {
-			return err
-		}
-		return session.CommitTransaction(ctx)
-	})
-}
-
-func (s *Store[T]) Update(o T) error {
-	return s.Collection.Update(o)
-}
-
-func (s *Store[T]) Delete(o T) error {
-	return s.Collection.Delete(o)
+func (s *Store[T]) Delete(o *T) error {
+	_, err := s.Collection.Deleter().Filter(query.Id((*o).GetID())).DeleteOne(context.Background())
+	return err
 }
 
 func (s *Store[T]) Count(query bson.M) (int64, error) {
-	return s.Collection.CountDocuments(mgm.Ctx(), query)
+	return s.Collection.Finder().Filter(query).Count(context.Background())
 }
 
 func (s *Store[T]) Query() *QueryBuilder[T] {
-	values := make([]bson.M, 0)
+	q := query.NewBuilder()
+
 	if len(s.queryDefaults) > 0 {
-		values = append(values, s.queryDefaults...)
+		for _, m := range s.queryDefaults {
+			for k, v := range m {
+				q.Eq(k, v)
+			}
+		}
 	}
+
 	return &QueryBuilder[T]{
-		store:  s,
-		values: values,
-		limit:  25,
-		skip:   0,
-		sort:   bson.D{},
+		store: s,
+		query: q,
+		limit: 25,
+		skip:  0,
+		sort:  bson.D{},
 	}
 }

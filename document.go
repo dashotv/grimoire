@@ -1,19 +1,31 @@
 package grimoire
 
-import "github.com/kamva/mgm/v3"
+import (
+	"github.com/chenmingyong0423/go-mongox/v2"
+	"go.mongodb.org/mongo-driver/v2/bson"
+)
 
 type Document struct {
-	mgm.DefaultModel `bson:",inline"`
+	mongox.Model `bson:",inline"`
 }
 
-func (d *Document) PrepareID(id interface{}) (interface{}, error) {
-	return d.IDField.PrepareID(id)
+type Model interface {
+	GetID() bson.ObjectID
 }
 
-func (d *Document) GetID() interface{} {
-	return d.IDField.GetID()
+func (d Document) GetID() bson.ObjectID {
+	return d.ID
 }
 
-func (d *Document) SetID(id interface{}) {
-	d.IDField.SetID(id)
-}
+//
+// func (d *Document) PrepareID(id interface{}) (interface{}, error) {
+// 	return d.IDField.PrepareID(id)
+// }
+//
+// func (d *Document) GetID() interface{} {
+// 	return d.IDField.GetID()
+// }
+//
+// func (d *Document) SetID(id interface{}) {
+// 	d.IDField.SetID(id)
+// }

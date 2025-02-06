@@ -82,11 +82,25 @@ func CreateIndexesFromTags[T mgm.Model](s *Store[T], o T) {
 
 // New creates a new store object
 func New[T mgm.Model](URI, database, collection string) (*Store[T], error) {
-	c, err := newClient(URI)
+	c, err := NewClient(URI)
 	if err != nil {
 		return nil, err
 	}
 
+	db := c.Database(database)
+	col := mgm.NewCollection(db, collection)
+
+	s := &Store[T]{
+		Client:        c,
+		Database:      db,
+		Collection:    col,
+		queryDefaults: []bson.M{},
+	}
+	return s, nil
+}
+
+// NewWithClient creates a new store object with provided client
+func NewWithClient[T mgm.Model](c *mongo.Client, database, collection string) (*Store[T], error) {
 	db := c.Database(database)
 	col := mgm.NewCollection(db, collection)
 

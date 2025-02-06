@@ -14,7 +14,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func newClient(URI string) (*mongo.Client, error) {
+func NewClient(URI string) (*mongo.Client, error) {
 	c, err := mgm.NewClient(CustomClientOptions(URI))
 	if err != nil {
 		return nil, err

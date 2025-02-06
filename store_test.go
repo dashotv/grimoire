@@ -7,6 +7,7 @@ import (
 
 	"github.com/kr/pretty"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -15,6 +16,31 @@ func TestStore_Create(t *testing.T) {
 	s, err := New[*Download]("mongodb://localhost:27017", "seer_development", "downloads")
 	assert.NoError(t, err)
 	assert.NotNil(t, s)
+
+	o := &Download{
+		MediumId:  primitive.NewObjectID(),
+		Auto:      true,
+		Multi:     false,
+		Force:     false,
+		Url:       "https://example.com",
+		ReleaseId: "1234567890",
+		Thash:     "1234567890",
+	}
+
+	err = s.Save(o)
+	assert.NoError(t, err, "save")
+	assert.NotNil(t, o.ID, "id")
+
+	createdId = o.ID
+}
+
+func TestStore_CreateWithClient(t *testing.T) {
+	c, err := NewClient("mongodb://localhost:27017")
+	require.NoError(t, err)
+
+	s, err := NewWithClient[*Download](c, "seer_development", "downloads")
+	require.NoError(t, err)
+	require.NotNil(t, s)
 
 	o := &Download{
 		MediumId:  primitive.NewObjectID(),
